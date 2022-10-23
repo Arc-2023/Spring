@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: vuee-spring
+  resources:
+    static-locations: classpath:/static/
+  datasource:
+    url: jdbc:mysql://localhost:3306/vue-spring?serverTimezone=GMT%2B8&characterEncoding=utf8
+    username: root
+    password: password
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      auto-commit: true
+      pool-name: mysql-pool
+      connection-timeout: 30000
+      connection-test-query: select now()
+  redis:
+    password: 123456QWE
+server:
+  port: 8888
+  servlet:
+    encoding:
+      charset: UTF-8
