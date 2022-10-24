@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * </p>
  *
  * @author Cyk
- * @since 2022-10-22
+ * @since 2022-10-24
  */
 public interface UserVoeTableMapper extends BaseMapper<UserVoeTable> {
 

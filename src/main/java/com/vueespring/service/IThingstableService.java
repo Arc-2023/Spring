@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * </p>
  *
  * @author Cyk
- * @since 2022-10-23
+ * @since 2022-10-24
  */
 public interface IThingstableService extends IService<Thingstable> {
 

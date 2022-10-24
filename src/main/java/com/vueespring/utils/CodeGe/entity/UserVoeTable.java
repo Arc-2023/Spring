@@ -13,7 +13,7 @@ import io.swagger.annotations.ApiModelProperty;
  * </p>
  *
  * @author Cyk
- * @since 2022-10-22
+ * @since 2022-10-24
  */
 @TableName("user_voe_table")
 @ApiModel(value = "UserVoeTable对象", description = "")

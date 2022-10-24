@@ -15,10 +15,5 @@ class VueeSpringApplicationTests {
     @Test
     void md5test(){
     }
-    @Test
-    void scheduler() throws Exception {
-        ThingScheduler th = new ThingScheduler();
-        th.init("cyk");
-    }
 
 }

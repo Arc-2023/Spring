@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
  * </p>
  *
  * @author Cyk
- * @since 2022-10-22
+ * @since 2022-10-24
  */
 @Service
 public class UserVoeTableServiceImpl extends ServiceImpl<UserVoeTableMapper, UserVoeTable> implements IUserVoeTableService {

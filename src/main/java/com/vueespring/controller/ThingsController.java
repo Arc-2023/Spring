@@ -9,14 +9,12 @@ import com.vueespring.service.IThingstableService;
 import com.vueespring.shiro.JwtUtils;
 import com.vueespring.utils.JsonResult;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.relational.core.sql.In;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.websocket.server.PathParam;
 
 @RestController
@@ -38,8 +36,10 @@ public class ThingsController {
             return new JsonResult().error("Already existed");
         }else {
             String token = request.getHeader("Authentication");
+
             String userid = jwtUtils.getClaimByToken(token).getSubject();
             System.out.println(userid);
+
             Thingstable thingstable = new Thingstable();
             thingstable.setName(itemVOEntity.getName());
             thingstable.setStartTime(itemVOEntity.getStart());
