@@ -32,6 +32,8 @@ public class UserVoeEntity implements Serializable {
 
     private String permission;
 
+
+
     public Integer getId() {
         return id;
     }

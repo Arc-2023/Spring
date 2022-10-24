@@ -2,6 +2,7 @@ package com.vueespring.service;
 
 import com.vueespring.entity.Thingstable;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.springframework.stereotype.Repository;
 
 /**
  * <p>

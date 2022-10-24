@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class ItemOTHVOEntity {
     private String msg;
-    private String by;
     private String tag;
     private Integer type;
+    private String by;
 }

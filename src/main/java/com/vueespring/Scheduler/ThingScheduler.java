@@ -37,6 +37,13 @@ public class ThingScheduler {
             map.put("message",thing.getMessage());
             map.put("start_time",thing.getStartTime());
             map.put("end_time",thing.getEndTime());
+            map.put("type",thing.getType());
+            map.put("tag",thing.getTag());
+            map.put("name",thing.getName());
+            String token = thing.getAlertToken();
+            if(thing.getAlertToken()!=null){
+                map.put("token",token);
+            }
             JobDetail job = JobBuilder.newJob(TestJob.class)
                     .withIdentity(thing.getName(),thing.getName())
                     .usingJobData(map)

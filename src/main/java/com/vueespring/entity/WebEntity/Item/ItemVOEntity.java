@@ -16,5 +16,6 @@ public class ItemVOEntity {
     private String status;
     private LocalDateTime start;
     private LocalDateTime end;
+    private String alertToken;
     private ItemOTHVOEntity othermsg;
 }

@@ -9,7 +9,7 @@ public class SchedulerUtils {
         SimpleScheduleBuilder simpleScheduleBuilder = SimpleScheduleBuilder.simpleSchedule()
                 .repeatForever();
         if(type==1){
-            simpleScheduleBuilder.withIntervalInSeconds(1);
+            simpleScheduleBuilder.withIntervalInMinutes(1);
         }else if(type==2){
             simpleScheduleBuilder.withIntervalInMinutes(10);
         }else if(type==3){
