@@ -124,7 +124,6 @@ public class ThingsController {
             thing.setTag(item.getTag());
             thing.setType(item.getType());
             thing.setAlertToken(item.getAlertToken());
-
             if(thingstableMapper.updateById(thing)>0){
                 if(thing.getStatus().equals("Running")){
                     List<Thingstable> listnow = new ArrayList<Thingstable>();
@@ -185,7 +184,7 @@ public class ThingsController {
     }
     @GetMapping("/pauseitem")
     @RequiresAuthentication
-    public JsonResult pauseitems(Integer id) throws Exception {
+    public JsonResult pauseitem(Integer id) throws Exception {
         QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
                 .eq("id",id);
         List<Thingstable> list  = iThingstableService.list(queryWrapper);

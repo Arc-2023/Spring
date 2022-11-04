@@ -1,16 +1,19 @@
 package com.vueespring.service.serviceImpl;
 
 import cn.hutool.core.util.IdUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.vueespring.entity.Note;
+import com.vueespring.entity.WebEntity.NoteCard;
 import com.vueespring.mapper.NoteMapper;
 import com.vueespring.service.INoteService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.vueespring.utils.JsonResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,6 +44,19 @@ public class NoteServiceImpl extends ServiceImpl<NoteMapper, Note> implements IN
             }
         }
         return "Faild";
+    }
+    @Override
+    public List<NoteCard> getNoteCards(QueryWrapper<Note> wrapper){
+        NoteCard card = new NoteCard();
+        List<NoteCard> cards = new ArrayList<NoteCard>();
+        list(wrapper).parallelStream().forEach(item->{
+            card.setTitle(item.getTitle());
+            card.setId(item.getId());
+            card.setCreater(item.getCreater());
+            card.setIntro(item.getIntro());
+            cards.add(card);
+        });
+        return cards;
     }
 
 }

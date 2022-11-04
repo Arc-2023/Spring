@@ -1,10 +1,13 @@
 package com.vueespring.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.vueespring.entity.Note;
+import com.vueespring.entity.WebEntity.NoteCard;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * <p>
@@ -17,4 +20,6 @@ import java.io.IOException;
 public interface INoteService extends IService<Note> {
 
     String saveImg(MultipartFile file, String dir) throws IOException;
+
+    List<NoteCard> getNoteCards(QueryWrapper<Note> wrapper);
 }

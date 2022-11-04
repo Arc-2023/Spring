@@ -12,7 +12,7 @@ public class JsonResult {
     public final static Integer FAIL = 400;
     public final static Integer ERROR = 500;
     public final static Integer DENIED = 401;
-    public Integer code;
+    public Integer status;
     public Object data;
     public String message;
     public JsonResult ok(Object data){
