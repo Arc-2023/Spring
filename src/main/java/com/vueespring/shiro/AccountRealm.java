@@ -1,5 +1,6 @@
 package com.vueespring.shiro;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.vueespring.entity.WebEntity.UserVoeEntity;
 import com.vueespring.service.IUserVoeTableService;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +26,13 @@ public class AccountRealm extends SimpleAccountRealm {
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
         String jwt = (String)token.getPrincipal();
         String id = jwtUtils.getClaimByToken(jwt).getSubject();
-        UserVoeEntity userVoe = userVOEService.getById(id);
+        QueryWrapper<UserVoeEntity> wrapper = new QueryWrapper<UserVoeEntity>()
+                .eq("id",id);
+        UserVoeEntity userVoe = userVOEService.getOne(wrapper);
         if(userVoe == null){
             throw new UnknownAccountException("账户不存在！");
         }else {
-            return new SimpleAuthenticationInfo(token,token,this.getName());
+            return new SimpleAuthenticationInfo(token,jwt,this.getName());
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.vueespring.service;
 
-import com.vueespring.entity.WebEntity.UserVoeEntity;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.vueespring.entity.WebEntity.UserVoeEntity;
 
 /**
  * <p>
@@ -9,9 +9,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * </p>
  *
  * @author Cyk
- * @since 2022-10-17
+ * @since 2022-10-24
  */
-
 public interface IUserVoeTableService extends IService<UserVoeEntity> {
 
 }

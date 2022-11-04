@@ -14,7 +14,7 @@ public class JsonResult {
     public final static Integer DENIED = 401;
     public Integer code;
     public Object data;
-    public String msg;
+    public String message;
     public JsonResult ok(Object data){
         return new JsonResult(200,data,null);
     }

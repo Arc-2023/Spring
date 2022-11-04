@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * You may obtain QuartzServiceImpl copy of the License at
  *
  *      https://www.apache.org/licenses/LICENSE-2.0
  *
@@ -29,7 +29,7 @@ public class MavenWrapperDownloader {
             + WRAPPER_VERSION + "/maven-wrapper-" + WRAPPER_VERSION + ".jar";
 
     /**
-     * Path to the maven-wrapper.properties file, which might contain a downloadUrl property to
+     * Path to the maven-wrapper.properties file, which might contain QuartzServiceImpl downloadUrl property to
      * use instead of the default one.
      */
     private static final String MAVEN_WRAPPER_PROPERTIES_PATH =
@@ -51,7 +51,7 @@ public class MavenWrapperDownloader {
         File baseDirectory = new File(args[0]);
         System.out.println("- Using base directory: " + baseDirectory.getAbsolutePath());
 
-        // If the maven-wrapper.properties exists, read it and check if it contains a custom
+        // If the maven-wrapper.properties exists, read it and check if it contains QuartzServiceImpl custom
         // wrapperUrl parameter.
         File mavenWrapperPropertyFile = new File(baseDirectory, MAVEN_WRAPPER_PROPERTIES_PATH);
         String url = DEFAULT_DOWNLOAD_URL;

@@ -13,7 +13,7 @@ import io.swagger.annotations.ApiModelProperty;
  * </p>
  *
  * @author Cyk
- * @since 2022-10-24
+ * @since 2022-10-25
  */
 @ApiModel(value = "Thingstable对象", description = "")
 public class Thingstable implements Serializable {
@@ -39,7 +39,9 @@ public class Thingstable implements Serializable {
 
     private String alertToken;
 
-    private String by;
+    private String creater;
+
+    private String status;
 
     public Integer getId() {
         return id;
@@ -113,12 +115,20 @@ public class Thingstable implements Serializable {
         this.alertToken = alertToken;
     }
 
-    public String getBy() {
-        return by;
+    public String getCreater() {
+        return creater;
     }
 
-    public void setBy(String by) {
-        this.by = by;
+    public void setCreater(String creater) {
+        this.creater = creater;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     @Override
@@ -133,7 +143,8 @@ public class Thingstable implements Serializable {
             ", message = " + message +
             ", tag = " + tag +
             ", alertToken = " + alertToken +
-            ", by = " + by +
+            ", creater = " + creater +
+            ", status = " + status +
         "}";
     }
 }

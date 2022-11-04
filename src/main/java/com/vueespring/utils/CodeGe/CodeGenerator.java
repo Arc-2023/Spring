@@ -16,7 +16,7 @@ public class CodeGenerator{
                 .globalConfig(builder -> {
                     builder.author("Cyk")
                             .enableSwagger()
-                            .outputDir("src/main/java/com/vueespring/utils/CodeGe");
+                            .outputDir("C:\\Users\\ARC\\Desktop\\JETB\\vuee-spring\\src\\main\\java\\com\\vueespring\\utils\\CodeGe");
                 })
                 .packageConfig(builder -> {
                     builder.parent("")

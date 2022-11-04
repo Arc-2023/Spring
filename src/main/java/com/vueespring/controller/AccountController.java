@@ -4,15 +4,20 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.vueespring.entity.WebEntity.UserVoeEntity;
 import com.vueespring.mapper.UserVoeTableMapper;
 import com.vueespring.service.IUserVoeTableService;
+import com.vueespring.service.QuartzService;
 import com.vueespring.shiro.JwtUtils;
 import com.vueespring.utils.JsonResult;
+import lombok.SneakyThrows;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import cn.hutool.crypto.SecureUtil;
 import javax.servlet.http.HttpServletResponse;
-import javax.websocket.server.PathParam;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>
@@ -32,10 +37,12 @@ public class AccountController {
     RedisTemplate redisTemplate;
     @Autowired
     UserVoeTableMapper userVoeTableMapper;
-    @GetMapping("/login")
+    @Autowired
+    QuartzService quartzService;
+    @RequestMapping("/login")
     public JsonResult login(@RequestParam(value="username")String username,
                             @RequestParam(value="password")String password,
-                            HttpServletResponse response){
+                            HttpServletResponse response) throws Exception {
         QueryWrapper<UserVoeEntity> wrapper = new QueryWrapper<UserVoeEntity>().eq("username",username);
         System.out.println(username);
         System.out.println(password);
@@ -46,10 +53,16 @@ public class AccountController {
         }
         else {
             String token = jwtUtils.generateToken(voeEntity.getId());
+            LocalDateTime time = LocalDateTime.now().plusSeconds(60*60*48);
             response.setCharacterEncoding("utf-8");
             response.setHeader("Token",token);
             response.setHeader("Access-Control-Expose-Headers", "token");
-            return new JsonResult().ok("登录成功");
+            Map<String,Object> map = new HashMap<String, Object>();
+            map.put("username",voeEntity.getUsername());
+            map.put("message","Login Successfully");
+            map.put("role",voeEntity.getPermission());
+            map.put("nextexpiretime",time);
+            return new JsonResult().ok(map);
         }
     }
     @GetMapping("/register")
@@ -72,5 +85,4 @@ public class AccountController {
         SecurityUtils.getSubject().logout();
         return new JsonResult().ok(null,"退出成功");
     }
-
 }

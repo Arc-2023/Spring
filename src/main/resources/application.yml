@@ -16,8 +16,18 @@ spring:
       connection-test-query: select now()
   redis:
     password: 123456QWE
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 1000MB
+      max-request-size: 1000MB
 server:
   port: 8888
   servlet:
     encoding:
       charset: UTF-8
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+vuee-spring:
+  file-path: D:\image\spb

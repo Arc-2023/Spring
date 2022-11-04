@@ -16,14 +16,14 @@ import java.util.Date;
 @Slf4j
 public class JwtUtils {
     private String secret = "123456qwe";
-    private long expire = 60*60*48;
+    private long expire = 60*60*48*1000;
     private String header;
     public String generateToken(long id){
         Date nowDate = new Date();
         Date expireDate = new Date(nowDate.getTime() + expire);
     return Jwts.builder()
             .setSubject(id+"")
-            .claim("id",id)
+            .setId(id+"")
             .setExpiration(expireDate)
             .signWith(SignatureAlgorithm.HS256,secret)
             .compact();

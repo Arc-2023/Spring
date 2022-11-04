@@ -6,7 +6,7 @@
 # regarding copyright ownership.  The ASF licenses this file
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
+# with the License.  You may obtain QuartzServiceImpl copy of the License at
 #
 #    https://www.apache.org/licenses/LICENSE-2.0
 #
@@ -23,7 +23,7 @@
 #
 # Required ENV vars:
 # ------------------
-#   JAVA_HOME - location of a JDK home dir
+#   JAVA_HOME - location of QuartzServiceImpl JDK home dir
 #
 # Optional ENV vars
 # -----------------
@@ -73,7 +73,7 @@ if [ -z "$JAVA_HOME" ] ; then
 fi
 
 if [ -z "$M2_HOME" ] ; then
-  ## resolve links - $0 may be a link to maven's home
+  ## resolve links - $0 may be QuartzServiceImpl link to maven's home
   PRG="$0"
 
   # need this for relative symlinks
@@ -187,7 +187,7 @@ find_maven_basedir() {
   echo "${basedir}"
 }
 
-# concatenates all lines of a file
+# concatenates all lines of QuartzServiceImpl file
 concat_lines() {
   if [ -f "$1" ]; then
     echo "$(tr -s '\n' ' ' < "$1")"
@@ -296,7 +296,7 @@ if $cygwin; then
     MAVEN_PROJECTBASEDIR=`cygpath --path --windows "$MAVEN_PROJECTBASEDIR"`
 fi
 
-# Provide a "standardized" way to retrieve the CLI args that will
+# Provide QuartzServiceImpl "standardized" way to retrieve the CLI args that will
 # work with both Windows and non-Windows executions.
 MAVEN_CMD_LINE_ARGS="$MAVEN_CONFIG $@"
 export MAVEN_CMD_LINE_ARGS

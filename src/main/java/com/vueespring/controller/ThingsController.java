@@ -1,17 +1,22 @@
 package com.vueespring.controller;
 
+import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.vueespring.Scheduler.ThingScheduler;
+import com.vueespring.service.QuartzService;
+import com.vueespring.service.ThingService;
+import com.vueespring.service.serviceImpl.QuartzServiceImpl;
 import com.vueespring.entity.Thingstable;
 import com.vueespring.entity.WebEntity.Item.ItemVOEntity;
 import com.vueespring.entity.WebEntity.UserVoeEntity;
 import com.vueespring.mapper.ThingstableMapper;
-import com.vueespring.mapper.UserVoeTableMapper;
 import com.vueespring.service.IThingstableService;
 import com.vueespring.service.IUserVoeTableService;
 import com.vueespring.shiro.JwtUtils;
 import com.vueespring.utils.JsonResult;
+import io.jsonwebtoken.Claims;
+import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.relational.core.sql.In;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,7 +24,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.websocket.server.PathParam;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class ThingsController {
@@ -30,69 +38,99 @@ public class ThingsController {
     @Autowired
     public JwtUtils jwtUtils;
     @Autowired
-    public ThingScheduler thingScheduler;
+    public QuartzServiceImpl quartzservice;
     @Autowired
     public IUserVoeTableService iUserVoeTableService;
+    @Autowired
+    public ThingService thingService;
     @PostMapping("/additem")
     public JsonResult additem(@RequestBody ItemVOEntity itemVOEntity,
                               HttpServletRequest request){
         QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
                 .eq("id",itemVOEntity.getId());
-        Thingstable thingt = iThingstableService.getOne(queryWrapper);
-        if(thingt==null){
+        Integer count = iThingstableService.count(queryWrapper);
+        if(count>0){
             return new JsonResult().error("Already existed");
         }else {
-            String token = request.getHeader("Authentication");
-            String userid = jwtUtils.getClaimByToken(token).getSubject();
+            String token = request.getHeader("token");
+            Claims claimByToken = jwtUtils.getClaimByToken(token);
+            String userid = claimByToken.getSubject();
             UserVoeEntity userinfo = iUserVoeTableService.getById(userid);
             if(userinfo==null){
                 return new JsonResult().error("token错误或者无用户");
             }
             Thingstable thingstable = new Thingstable();
             thingstable.setName(itemVOEntity.getName());
-            thingstable.setStartTime(itemVOEntity.getStart());
-            thingstable.setEndTime(itemVOEntity.getEnd());
-            thingstable.setMessage(itemVOEntity.getOthermsg().getMsg());
-            thingstable.setType(itemVOEntity.getOthermsg().getType());
-            thingstable.setTag(itemVOEntity.getOthermsg().getTag());
+            thingstable.setStartTime(itemVOEntity.getStartTime());
+            thingstable.setEndTime(itemVOEntity.getEndTime());
+            thingstable.setMessage(itemVOEntity.getMessage());
+            thingstable.setType(itemVOEntity.getType());
+            thingstable.setTag(itemVOEntity.getTag());
             thingstable.setUserid(Integer.parseInt(userid));
+            thingstable.setCreater(userinfo.getUsername());
             thingstable.setAlertToken(itemVOEntity.getAlertToken());
-            thingstable.setBy(userinfo.getUsername());
-            if(thingstableMapper.insert(thingstable)>0){
+            thingstable.setStatus("Pause");
+            if(thingstableMapper.insert(thingstable) > 0){
                 return new JsonResult().ok("Submit Successfully");
             }else {
                 return new JsonResult().error("Submit Faild");
             }
         }
     }
-    @GetMapping("/start")
-    public JsonResult start(@PathParam("username") String username){
-        try {
-            thingScheduler.init(username);
-            return new JsonResult().ok("ok");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    @GetMapping("/getUserThings")
+    @RequiresAuthentication
+    public JsonResult getUserThings(@PathParam("username") String username) throws Exception {
+        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
+                .eq("creater",username);
+        List<Thingstable> tabledata = thingstableMapper.selectList(queryWrapper);
+        LocalDateTime time = LocalDateTime.now();
+        if(tabledata==null){
+            return new JsonResult().error("Don't have items");
         }
+        quartzservice.initstart();
+        quartzservice.startThings(
+                tabledata.parallelStream().map(item->{
+                    if(thingService.checkAndSetStatus(item,time)=="Running"){
+                        List<Thingstable> list = new ArrayList<Thingstable>();
+                        list.add(item);
+                        try {
+                            quartzservice.startThings(list);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    return item;
+                }
+                ).collect(Collectors.toList()));
+        return new JsonResult().ok(tabledata);
     }
-    @GetMapping("/getAllThing")
-    public JsonResult getAllThing(){
-        List<Thingstable> things = iThingstableService.list();
-        return new JsonResult().ok(things);
-    }
+
     @PostMapping("/changeitem")
-    public JsonResult changeitem(@RequestBody ItemVOEntity item){
-        Thingstable thing = iThingstableService.getById(item.getId());
-        if(thing!=null){
+    @RequiresAuthentication
+    public JsonResult changeitem(@RequestBody ItemVOEntity item) throws Exception {
+        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
+                .eq("id",item.getId());
+        Thingstable thing = iThingstableService.getOne(queryWrapper);
+        if(thing==null){
             return new JsonResult().error("Don't Exist");
         }else {
+            List<Thingstable> listpre = new ArrayList<Thingstable>();
+            listpre.add(thing);
+            quartzservice.delthings(listpre);
             thing.setName(item.getName());
-            thing.setStartTime(item.getStart());
-            thing.setEndTime(item.getEnd());
-            thing.setMessage(item.getOthermsg().getMsg());
-            thing.setTag(item.getOthermsg().getTag());
-            thing.setType(item.getOthermsg().getType());
+            thing.setStartTime(item.getStartTime());
+            thing.setEndTime(item.getEndTime());
+            thing.setMessage(item.getMessage());
+            thing.setTag(item.getTag());
+            thing.setType(item.getType());
             thing.setAlertToken(item.getAlertToken());
-            if(thingstableMapper.insert(thing)==1){
+
+            if(thingstableMapper.updateById(thing)>0){
+                if(thing.getStatus().equals("Running")){
+                    List<Thingstable> listnow = new ArrayList<Thingstable>();
+                    listnow.add(thing);
+                    quartzservice.startThings(listnow);
+                }
                 return new JsonResult().ok("insert successfully");
             }
             else {
@@ -100,4 +138,67 @@ public class ThingsController {
             }
         }
     }
+    @GetMapping("/delitem")
+    @RequiresAuthentication
+    public JsonResult delitem(Integer id) {
+        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
+                .eq("id",id);
+        Thingstable thing = iThingstableService.getOne(queryWrapper);
+        if (thing == null) {
+            return new JsonResult().error("Don't Exist");
+        } else {
+            if (thingstableMapper.deleteById(id) > 0) {
+                return new JsonResult().ok("del successfully");
+            } else {
+                return new JsonResult().error("del faild");
+            }
+        }
+    }
+    @GetMapping("/startitem")
+    @RequiresAuthentication
+    public JsonResult startItem(Integer id) throws Exception {
+        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
+                .eq("id",id);
+        Thingstable thing = iThingstableService.getOne(queryWrapper);
+        if (thing == null) {
+            return new JsonResult().error("Don't Exist");
+        }else {
+            LocalDateTime now = LocalDateTime.now();
+            if(thing.getStatus()=="Running"){
+                return new JsonResult().error("Already Running");
+            }else if(thing.getEndTime().isBefore(now)){
+                thing.setStatus("Expired");
+                iThingstableService.updateById(thing);
+                return new JsonResult().error("Expired");
+            }else {
+                thing.setStatus("Running");
+                List<Thingstable> list = new ArrayList<Thingstable>();
+                list.add(thing);
+                if(quartzservice.startThings(list)){
+                    thingstableMapper.updateById(thing);
+                    return new JsonResult().ok("started");
+                }else {
+                    return new JsonResult().error("faild to start");
+                }
+            }
+        }
+    }
+    @GetMapping("/pauseitem")
+    @RequiresAuthentication
+    public JsonResult pauseitems(Integer id) throws Exception {
+        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
+                .eq("id",id);
+        List<Thingstable> list  = iThingstableService.list(queryWrapper);
+        if(list!=null){
+            list.forEach(item->item.setStatus("Pause"));
+            quartzservice.pausethings(list);
+            if(iThingstableService.updateBatchById(list)){
+                return new JsonResult().ok("Stopped");
+            }
+        }else {
+            return new JsonResult().ok("Item not found");
+        }
+        return new JsonResult().ok("Stop Faild");
+    }
+
 }
