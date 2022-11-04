@@ -3,7 +3,8 @@ package com.vueespring.entity;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JacksonAnnotation;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -13,26 +14,28 @@ import io.swagger.annotations.ApiModelProperty;
  * </p>
  *
  * @author Cyk
- * @since 2022-10-28
+ * @since 2022-11-04
  */
 @ApiModel(value = "Note对象", description = "")
 public class Note implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
+    @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    private Integer noteid;
+    private String title;
+
+    private String creater;
 
     private String content;
 
-    private String creater;
+    private String othermessage;
 
     private LocalDateTime createdTime;
 
     private LocalDateTime lastedittime;
 
-    private String othermessage;
+    private String intro;
 
     public Integer getId() {
         return id;
@@ -42,12 +45,20 @@ public class Note implements Serializable {
         this.id = id;
     }
 
-    public Integer getNoteid() {
-        return noteid;
+    public String getTitle() {
+        return title;
     }
 
-    public void setNoteid(Integer noteid) {
-        this.noteid = noteid;
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getCreater() {
+        return creater;
+    }
+
+    public void setCreater(String creater) {
+        this.creater = creater;
     }
 
     public String getContent() {
@@ -58,12 +69,12 @@ public class Note implements Serializable {
         this.content = content;
     }
 
-    public String getCreater() {
-        return creater;
+    public String getOthermessage() {
+        return othermessage;
     }
 
-    public void setCreater(String creater) {
-        this.creater = creater;
+    public void setOthermessage(String othermessage) {
+        this.othermessage = othermessage;
     }
 
     public LocalDateTime getCreatedTime() {
@@ -82,24 +93,25 @@ public class Note implements Serializable {
         this.lastedittime = lastedittime;
     }
 
-    public String getOthermessage() {
-        return othermessage;
+    public String getIntro() {
+        return intro;
     }
 
-    public void setOthermessage(String othermessage) {
-        this.othermessage = othermessage;
+    public void setIntro(String intro) {
+        this.intro = intro;
     }
 
     @Override
     public String toString() {
         return "Note{" +
             "id = " + id +
-            ", noteid = " + noteid +
-            ", content = " + content +
+            ", title = " + title +
             ", creater = " + creater +
+            ", content = " + content +
+            ", othermessage = " + othermessage +
             ", createdTime = " + createdTime +
             ", lastedittime = " + lastedittime +
-            ", othermessage = " + othermessage +
+            ", intro = " + intro +
         "}";
     }
 }
