@@ -17,5 +17,5 @@ public interface ThingService {
 
     void delthing(Thingstable thing, Scheduler scheduler) throws SchedulerException;
 
-    String checkAndSetStatus(Thingstable thing, LocalDateTime time);
+    String checkAndSetStatus(Thingstable thing);
 }

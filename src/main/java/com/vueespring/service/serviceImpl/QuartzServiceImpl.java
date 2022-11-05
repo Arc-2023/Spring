@@ -22,9 +22,9 @@ public class QuartzServiceImpl implements QuartzService {
     public IThingstableService iThingstableService;
     @Autowired
     public ThingstableMapper mapper;
+    private Scheduler scheduler;
     @Autowired
     public ThingService thingService;
-    public Scheduler scheduler;
     @Override
     public Boolean initstart() throws SchedulerException {
         scheduler = StdSchedulerFactory.getDefaultScheduler();
@@ -34,7 +34,6 @@ public class QuartzServiceImpl implements QuartzService {
     }
     @Override
     public Boolean startThings(List<Thingstable> list) throws Exception{
-        scheduler = StdSchedulerFactory.getDefaultScheduler();
         list.parallelStream().forEach(thing->{
             try {
                 thingService.startitem(thing,scheduler);
@@ -46,7 +45,6 @@ public class QuartzServiceImpl implements QuartzService {
     }
     @Override
     public Boolean pausethings(List<Thingstable> list) throws Exception{
-        scheduler = StdSchedulerFactory.getDefaultScheduler();
         list.stream().forEach(thing->{
             thingService.pausething(thing,scheduler);
         });
@@ -54,7 +52,6 @@ public class QuartzServiceImpl implements QuartzService {
     }
     @Override
     public Boolean delthings(List<Thingstable> list) throws Exception{
-        scheduler = StdSchedulerFactory.getDefaultScheduler();
         list.stream().forEach(thing->{
             try {
                 thingService.delthing(thing,scheduler);

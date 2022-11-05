@@ -2,6 +2,7 @@ package com.vueespring.controller;
 
 import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.mysql.cj.x.protobuf.MysqlxExpr;
 import com.vueespring.service.QuartzService;
 import com.vueespring.service.ThingService;
 import com.vueespring.service.serviceImpl.QuartzServiceImpl;
@@ -11,9 +12,11 @@ import com.vueespring.entity.WebEntity.UserVoeEntity;
 import com.vueespring.mapper.ThingstableMapper;
 import com.vueespring.service.IThingstableService;
 import com.vueespring.service.IUserVoeTableService;
+import com.vueespring.shiro.JwtToken;
 import com.vueespring.shiro.JwtUtils;
 import com.vueespring.utils.JsonResult;
 import io.jsonwebtoken.Claims;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.relational.core.sql.In;
@@ -74,31 +77,22 @@ public class ThingsController {
             }
         }
     }
-    @GetMapping("/getUserThings")
+    @GetMapping("/refreshthings")
     @RequiresAuthentication
-    public JsonResult getUserThings(@PathParam("username") String username) throws Exception {
+    public JsonResult refreshThings() throws Exception {
+        JwtToken token = (JwtToken) SecurityUtils.getSubject().getPrincipal();
+        Integer id = Integer.valueOf(JwtUtils.getClaimByToken(token.token).getSubject());
         QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
-                .eq("creater",username);
+                .eq("userid",id);
         List<Thingstable> tabledata = thingstableMapper.selectList(queryWrapper);
         LocalDateTime time = LocalDateTime.now();
         if(tabledata==null){
             return new JsonResult().error("Don't have items");
         }
-        quartzservice.initstart();
-        quartzservice.startThings(
-                tabledata.parallelStream().map(item->{
-                    if(thingService.checkAndSetStatus(item,time)=="Running"){
-                        List<Thingstable> list = new ArrayList<Thingstable>();
-                        list.add(item);
-                        try {
-                            quartzservice.startThings(list);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    return item;
-                }
-                ).collect(Collectors.toList()));
+        quartzservice.startThings(tabledata
+                .parallelStream()
+                .filter(item-> thingService.checkAndSetStatus(item).equals("Running"))
+                .collect(Collectors.toList()));
         return new JsonResult().ok(tabledata);
     }
 
@@ -122,6 +116,7 @@ public class ThingsController {
             thing.setTag(item.getTag());
             thing.setType(item.getType());
             thing.setAlertToken(item.getAlertToken());
+
             if(thingstableMapper.updateById(thing)>0){
                 if(thing.getStatus().equals("Running")){
                     List<Thingstable> listnow = new ArrayList<Thingstable>();
@@ -196,6 +191,16 @@ public class ThingsController {
             return new JsonResult().ok("Item not found");
         }
         return new JsonResult().ok("Stop Faild");
+    }
+    @GetMapping("/initstart")
+    public JsonResult initstart() throws Exception {
+        JwtToken token = (JwtToken) SecurityUtils.getSubject().getPrincipal();
+        Integer id = Integer.valueOf(JwtUtils.getClaimByToken(token.token).getSubject());
+        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
+                .eq("id",id);
+        quartzservice.initstart();
+        quartzservice.startThings(iThingstableService.list(queryWrapper));
+        return new JsonResult().ok("init successfully");
     }
 
 }

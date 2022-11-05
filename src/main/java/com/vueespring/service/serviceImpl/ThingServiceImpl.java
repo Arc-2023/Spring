@@ -5,6 +5,7 @@ import com.vueespring.entity.Thingstable;
 import com.vueespring.service.ThingService;
 import com.vueespring.utils.SchedulerUtils;
 import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import java.time.ZoneId;
 public class ThingServiceImpl implements ThingService {
     @Autowired
     SchedulerUtils schedulerUtils;
+
     @Override
     public void creatitem(Thingstable thing, Scheduler scheduler) throws SchedulerException {
         Integer type = thing.getType();
@@ -30,7 +32,7 @@ public class ThingServiceImpl implements ThingService {
         map.put("name",thing.getName());
         map.put("alertToken",thing.getAlertToken());
         String token = thing.getAlertToken();
-        if(thing.getAlertToken()==null){
+        if(thing.getAlertToken()!=null){
             map.put("alertToken",token);
         }
         JobDetail job = JobBuilder.newJob(FWAlertJob.class)
@@ -74,8 +76,8 @@ public class ThingServiceImpl implements ThingService {
         scheduler.deleteJob(key);
     }
     @Override
-    public String checkAndSetStatus(Thingstable thing, LocalDateTime time){
-        if(thing.getEndTime().isBefore(time)){
+    public String checkAndSetStatus(Thingstable thing){
+        if(thing.getEndTime().isBefore(LocalDateTime.now())){
             thing.setStatus("Expired");
             return "Expired";
         }else {

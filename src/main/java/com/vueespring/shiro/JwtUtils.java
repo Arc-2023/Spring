@@ -15,10 +15,9 @@ import java.util.Date;
 @Component
 @Slf4j
 public class JwtUtils {
-    private String secret = "123456qwe";
-    private long expire = 60*60*48*1000;
-    private String header;
-    public String generateToken(long id){
+    private static String secret = "123456qwe";
+    private static long expire = 60*60*48*1000;
+    public static String generateToken(long id){
         Date nowDate = new Date();
         Date expireDate = new Date(nowDate.getTime() + expire);
     return Jwts.builder()
@@ -28,7 +27,7 @@ public class JwtUtils {
             .signWith(SignatureAlgorithm.HS256,secret)
             .compact();
     }
-    public Claims getClaimByToken(String token){
+    public static Claims getClaimByToken(String token){
         try{
             return Jwts.parser()
                     .setSigningKey(secret)
@@ -39,7 +38,7 @@ public class JwtUtils {
             return null;
         }
     }
-    public boolean CheckToken(Date expireTime){
+    public static boolean CheckToken(Date expireTime){
         return expireTime.before(new Date());
     }
 }
