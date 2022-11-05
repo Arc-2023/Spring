@@ -30,20 +30,22 @@ import java.util.regex.Pattern;
 public class NoteServiceImpl extends ServiceImpl<NoteMapper, Note> implements INoteService {
     @Override
     public String saveImg(MultipartFile file, String dir) throws IOException {
+        //匹配扩展名
         String regex = "(?=\\.)(.+)$";
         Matcher matcher = Pattern.compile(regex)
                 .matcher(Objects.requireNonNull(file.getOriginalFilename()));
         if(matcher.find()){
+            String filename = IdUtil.fastSimpleUUID()+matcher.group(1);
             String filepath = dir+"\\"+ IdUtil.fastSimpleUUID()+matcher.group(1);
             File path = new File(filepath);
             if (!path.exists()) {
                 if (path.mkdirs()) {
                     file.transferTo(path);
-                    return filepath;
+                    return "http://192.168.2.247/" + filename;
                 }
             }
         }
-        return "Faild";
+        return null;
     }
     @Override
     public List<NoteCard> getNoteCards(QueryWrapper<Note> wrapper){

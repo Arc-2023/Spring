@@ -21,11 +21,12 @@ public class JsonResult {
     public JsonResult ok(Object data,String msg){
         return new JsonResult(200,data,msg);
     }
+    public JsonResult ok(String message) {
+        return new JsonResult(200,message,null);
+    }
     public JsonResult error(String msg){
         return new JsonResult(500,null,msg);
     }
-
-
     public JsonResult denied(String msg){
         return new JsonResult(401,null,msg);
     }

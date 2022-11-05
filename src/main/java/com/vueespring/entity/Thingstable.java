@@ -4,8 +4,12 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
 
 /**
  * <p>
@@ -16,6 +20,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @since 2022-10-25
  */
 @ApiModel(value = "Thingstable对象", description = "")
+@Data
 public class Thingstable implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -26,9 +31,9 @@ public class Thingstable implements Serializable {
     private Integer userid;
 
     private String name;
-
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;
-
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
 
     private Integer type;
@@ -55,96 +60,4 @@ public class Thingstable implements Serializable {
         return userid;
     }
 
-    public void setUserid(Integer userid) {
-        this.userid = userid;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public LocalDateTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public LocalDateTime getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
-    }
-
-    public Integer getType() {
-        return type;
-    }
-
-    public void setType(Integer type) {
-        this.type = type;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getTag() {
-        return tag;
-    }
-
-    public void setTag(String tag) {
-        this.tag = tag;
-    }
-
-    public String getAlertToken() {
-        return alertToken;
-    }
-
-    public void setAlertToken(String alertToken) {
-        this.alertToken = alertToken;
-    }
-
-    public String getCreater() {
-        return creater;
-    }
-
-    public void setCreater(String creater) {
-        this.creater = creater;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    @Override
-    public String toString() {
-        return "Thingstable{" +
-            "id = " + id +
-            ", userid = " + userid +
-            ", name = " + name +
-            ", startTime = " + startTime +
-            ", endTime = " + endTime +
-            ", type = " + type +
-            ", message = " + message +
-            ", tag = " + tag +
-            ", alertToken = " + alertToken +
-            ", creater = " + creater +
-            ", status = " + status +
-        "}";
-    }
 }

@@ -4,7 +4,7 @@ spring:
   resources:
     static-locations: classpath:/static/
   datasource:
-    url: jdbc:mysql://localhost:3306/vue-spring?serverTimezone=GMT%2B8&characterEncoding=utf8
+    url: jdbc:mysql://localhost:3306/vue-spring?serverTimezone=Asia/Shanghai&characterEncoding=utf8
     username: root
     password: password
     hikari:
@@ -21,6 +21,8 @@ spring:
       enabled: true
       max-file-size: 1000MB
       max-request-size: 1000MB
+  jackson:
+    time-zone: GMT+8
 server:
   port: 8888
   servlet:

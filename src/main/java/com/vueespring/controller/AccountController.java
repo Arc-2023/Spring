@@ -74,7 +74,7 @@ public class AccountController {
             return new JsonResult().error("已有账号，可登陆");
         }else {
             if(iUserVoeTableService.save(new UserVoeEntity(null,username,SecureUtil.md5(password),"user"))){
-                return new JsonResult().ok(null,"注册成功");
+                return new JsonResult().ok("注册成功");
             }else {
                 return new JsonResult().error("注册失败");
             }

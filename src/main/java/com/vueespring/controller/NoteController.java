@@ -32,7 +32,6 @@ public class NoteController {
         List<NoteCard> cards = iNoteService.getNoteCards(queryWrapper);
         return new JsonResult().ok(cards);
     }
-
     @GetMapping("/getnotecontent")
     @RequiresAuthentication
     public JsonResult getNoteContent(Integer id) {
@@ -51,7 +50,7 @@ public class NoteController {
     ) throws IOException {
         String result = iNoteService.saveImg(file,path+"\\"+username);
         if(!result.equals("Faild")){
-            return new JsonResult().ok("smb:\\192.168.2.247\\" + result);
+            return new JsonResult().ok("http://192.168.2.247/" + result);
         }
         return new JsonResult().error("faild");
     }
