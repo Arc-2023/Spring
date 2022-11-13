@@ -49,9 +49,10 @@ public class NoteServiceImpl extends ServiceImpl<NoteMapper, Note> implements IN
     }
     @Override
     public List<NoteCard> getNoteCards(QueryWrapper<Note> wrapper){
-        NoteCard card = new NoteCard();
+
         List<NoteCard> cards = new ArrayList<NoteCard>();
         list(wrapper).parallelStream().forEach(item->{
+            NoteCard card = new NoteCard();
             card.setTitle(item.getTitle());
             card.setId(item.getId());
             card.setCreater(item.getCreater());

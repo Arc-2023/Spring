@@ -27,7 +27,7 @@ public class QuartzServiceImpl implements QuartzService {
     public ThingService thingService;
     @Override
     public Boolean initstart() throws SchedulerException {
-        scheduler = StdSchedulerFactory.getDefaultScheduler();
+        if(scheduler==null) scheduler = StdSchedulerFactory.getDefaultScheduler();
         scheduler.clear();
         scheduler.start();
         return true;
@@ -46,7 +46,8 @@ public class QuartzServiceImpl implements QuartzService {
     @Override
     public Boolean pausethings(List<Thingstable> list) throws Exception{
         list.stream().forEach(thing->{
-            thingService.pausething(thing,scheduler);
+            thingService.pausething(thing, scheduler);
+
         });
         return true;
     }

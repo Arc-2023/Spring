@@ -5,7 +5,6 @@ import com.vueespring.entity.Thingstable;
 import com.vueespring.service.ThingService;
 import com.vueespring.utils.SchedulerUtils;
 import org.quartz.*;
-import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

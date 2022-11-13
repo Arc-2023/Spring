@@ -18,7 +18,7 @@ import java.util.*;
 @RestController
 public class NoteController {
 
-    String path = "D:\\image\\spb";
+    String path = "C:\\Users\\ARC\\Desktop\\PROJECTS\\vuee-spring\\src\\main\\resources\\static";
     @Autowired
     public INoteService iNoteService;
     @Autowired
