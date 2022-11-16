@@ -96,7 +96,6 @@ public class ThingsController {
             List<Thingstable> listpre = new ArrayList<Thingstable>();
             listpre.add(thing);
             quartzservice.delthings(listpre);
-
             iThingstableService.setThingByItem(item, thing);
 
             if(thingstableMapper.updateById(thing)>0){
