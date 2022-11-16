@@ -2,6 +2,7 @@ package com.vueespring.service;
 
 import com.vueespring.entity.Thingstable;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.vueespring.entity.WebEntity.Item.ItemVOEntity;
 
 /**
  * <p>
@@ -13,4 +14,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IThingstableService extends IService<Thingstable> {
 
+    void setThingByItem(ItemVOEntity item, Thingstable thing);
 }

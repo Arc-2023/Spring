@@ -1,11 +1,10 @@
 package com.vueespring.service;
 
 import com.vueespring.entity.Thingstable;
+import com.vueespring.entity.WebEntity.Item.ItemVOEntity;
+import com.vueespring.entity.WebEntity.UserVoeEntity;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 
 
 public interface ThingService {
@@ -18,4 +17,6 @@ public interface ThingService {
     void delthing(Thingstable thing, Scheduler scheduler) throws SchedulerException;
 
     String checkAndSetStatus(Thingstable thing);
+
+    Thingstable getThingByVoe(ItemVOEntity itemVOEntity, String userid, UserVoeEntity userinfo);
 }

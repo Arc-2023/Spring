@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JacksonAnnotation;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
@@ -21,6 +22,7 @@ import java.io.Serializable;
 @TableName("user_voe_table")
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
 public class UserVoeEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -2,6 +2,8 @@ package com.vueespring.service.serviceImpl;
 
 import com.vueespring.Scheduler.FWAlertJob;
 import com.vueespring.entity.Thingstable;
+import com.vueespring.entity.WebEntity.Item.ItemVOEntity;
+import com.vueespring.entity.WebEntity.UserVoeEntity;
 import com.vueespring.service.ThingService;
 import com.vueespring.utils.SchedulerUtils;
 import org.quartz.*;
@@ -55,7 +57,7 @@ public class ThingServiceImpl implements ThingService {
         JobKey key = JobKey.jobKey(thingstable.getName(),thingstable.getTag());
         if(scheduler.checkExists(key)){
             scheduler.resumeJob(key);
-            System.out.println("Starting Job "+key);
+            System.out.println("Resuming Job "+key);
         }else {
             this.creatitem(thingstable,scheduler);
         }
@@ -82,5 +84,20 @@ public class ThingServiceImpl implements ThingService {
         }else {
             return thing.getStatus();
         }
+    }
+    @Override
+    public Thingstable getThingByVoe(ItemVOEntity itemVOEntity, String userid, UserVoeEntity userinfo) {
+        Thingstable thingstable = new Thingstable();
+        thingstable.setName(itemVOEntity.getName());
+        thingstable.setStartTime(itemVOEntity.getStartTime());
+        thingstable.setEndTime(itemVOEntity.getEndTime());
+        thingstable.setMessage(itemVOEntity.getMessage());
+        thingstable.setType(itemVOEntity.getType());
+        thingstable.setTag(itemVOEntity.getTag());
+        thingstable.setUserid(Integer.parseInt(userid));
+        thingstable.setCreater(userinfo.getUsername());
+        thingstable.setAlertToken(itemVOEntity.getAlertToken());
+        thingstable.setStatus("Pause");
+        return thingstable;
     }
 }

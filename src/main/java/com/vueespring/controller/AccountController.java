@@ -8,6 +8,7 @@ import com.vueespring.service.QuartzService;
 import com.vueespring.shiro.JwtUtils;
 import com.vueespring.utils.JsonResult;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -28,13 +29,12 @@ import java.util.Map;
  * @since 2022-10-17
  */
 @RestController
+@Slf4j
 public class AccountController {
     @Autowired
     IUserVoeTableService iUserVoeTableService;
     @Autowired
     JwtUtils jwtUtils;
-    @Autowired
-    RedisTemplate redisTemplate;
     @Autowired
     UserVoeTableMapper userVoeTableMapper;
     @Autowired
@@ -42,12 +42,12 @@ public class AccountController {
     @RequestMapping("/login")
     public JsonResult login(@RequestParam(value="username")String username,
                             @RequestParam(value="password")String password,
-                            HttpServletResponse response) throws Exception {
+                            HttpServletResponse response) {
         QueryWrapper<UserVoeEntity> wrapper = new QueryWrapper<UserVoeEntity>().eq("username",username);
-        System.out.println(username);
-        System.out.println(password);
+        log.debug(username);
+        log.debug(password);
         UserVoeEntity voeEntity = iUserVoeTableService.getOne(wrapper);
-        System.out.println(voeEntity);
+        log.debug(voeEntity.toString());
         if(!voeEntity.getPassword().equals(SecureUtil.md5(password))){
             return new JsonResult().error("密码错误");
         }
@@ -83,6 +83,6 @@ public class AccountController {
     @GetMapping("/logout")
     public JsonResult logout(){
         SecurityUtils.getSubject().logout();
-        return new JsonResult().ok(null,"退出成功");
+        return new JsonResult().ok("退出成功");
     }
 }

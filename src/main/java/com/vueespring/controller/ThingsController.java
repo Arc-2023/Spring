@@ -1,9 +1,6 @@
 package com.vueespring.controller;
 
-import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.mysql.cj.x.protobuf.MysqlxExpr;
-import com.vueespring.service.QuartzService;
 import com.vueespring.service.ThingService;
 import com.vueespring.service.serviceImpl.QuartzServiceImpl;
 import com.vueespring.entity.Thingstable;
@@ -15,15 +12,14 @@ import com.vueespring.service.IUserVoeTableService;
 import com.vueespring.shiro.JwtToken;
 import com.vueespring.shiro.JwtUtils;
 import com.vueespring.utils.JsonResult;
+import com.vueespring.utils.ThingItemUtils;
 import io.jsonwebtoken.Claims;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.relational.core.sql.In;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.websocket.server.PathParam;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +39,8 @@ public class ThingsController {
     public IUserVoeTableService iUserVoeTableService;
     @Autowired
     public ThingService thingService;
+    @Autowired
+    public ThingItemUtils thingItemUtils;
     @PostMapping("/additem")
     public JsonResult additem(@RequestBody ItemVOEntity itemVOEntity,
                               HttpServletRequest request){
@@ -59,17 +57,7 @@ public class ThingsController {
             if(userinfo==null){
                 return new JsonResult().error("token错误或者无用户");
             }
-            Thingstable thingstable = new Thingstable();
-            thingstable.setName(itemVOEntity.getName());
-            thingstable.setStartTime(itemVOEntity.getStartTime());
-            thingstable.setEndTime(itemVOEntity.getEndTime());
-            thingstable.setMessage(itemVOEntity.getMessage());
-            thingstable.setType(itemVOEntity.getType());
-            thingstable.setTag(itemVOEntity.getTag());
-            thingstable.setUserid(Integer.parseInt(userid));
-            thingstable.setCreater(userinfo.getUsername());
-            thingstable.setAlertToken(itemVOEntity.getAlertToken());
-            thingstable.setStatus("Pause");
+            Thingstable thingstable = thingService.getThingByVoe(itemVOEntity, userid, userinfo);
             if(thingstableMapper.insert(thingstable) > 0){
                 return new JsonResult().ok("Submit Successfully");
             }else {
@@ -77,6 +65,7 @@ public class ThingsController {
             }
         }
     }
+
     @GetMapping("/refreshthings")
     @RequiresAuthentication
     public JsonResult refreshThings() throws Exception {
@@ -85,7 +74,6 @@ public class ThingsController {
         QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
                 .eq("userid",id);
         List<Thingstable> tabledata = thingstableMapper.selectList(queryWrapper);
-        LocalDateTime time = LocalDateTime.now();
         if(tabledata==null){
             return new JsonResult().error("Don't have items");
         }
@@ -109,13 +97,7 @@ public class ThingsController {
             listpre.add(thing);
             quartzservice.delthings(listpre);
 
-            thing.setName(item.getName());
-            thing.setStartTime(item.getStartTime());
-            thing.setEndTime(item.getEndTime());
-            thing.setMessage(item.getMessage());
-            thing.setTag(item.getTag());
-            thing.setType(item.getType());
-            thing.setAlertToken(item.getAlertToken());
+            iThingstableService.setThingByItem(item, thing);
 
             if(thingstableMapper.updateById(thing)>0){
                 if(thing.getStatus().equals("Running")){
@@ -130,6 +112,7 @@ public class ThingsController {
             }
         }
     }
+
     @GetMapping("/delitem")
     @RequiresAuthentication
     public JsonResult delitem(Integer id) {
@@ -188,7 +171,7 @@ public class ThingsController {
                 return new JsonResult().ok("Stopped");
             }
         }else {
-            return new JsonResult().ok("Item not found");
+            return new JsonResult().error("Item not found");
         }
         return new JsonResult().ok("Stop Faild");
     }
@@ -199,7 +182,8 @@ public class ThingsController {
         QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
                 .eq("id",id);
         quartzservice.initstart();
-        quartzservice.startThings(iThingstableService.list(queryWrapper));
+        quartzservice.startThings(iThingstableService.list(queryWrapper)
+                .stream().filter(item-> thingService.checkAndSetStatus(item).equals("Running")).collect(Collectors.toList()));
         return new JsonResult().ok("init successfully");
     }
 
