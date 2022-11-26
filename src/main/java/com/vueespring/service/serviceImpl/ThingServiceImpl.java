@@ -1,11 +1,11 @@
 package com.vueespring.service.serviceImpl;
 
-import com.vueespring.Scheduler.FWAlertJob;
+import com.vueespring.Scheduler.FWPushingJob;
 import com.vueespring.entity.Thingstable;
 import com.vueespring.entity.WebEntity.Item.ItemVOEntity;
 import com.vueespring.entity.WebEntity.UserVoeEntity;
+import com.vueespring.service.QuartzService;
 import com.vueespring.service.ThingService;
-import com.vueespring.utils.SchedulerUtils;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,7 @@ import java.time.ZoneId;
 @Service
 public class ThingServiceImpl implements ThingService {
     @Autowired
-    SchedulerUtils schedulerUtils;
+    QuartzService quartzService;
 
     @Override
     public void creatitem(Thingstable thing, Scheduler scheduler) throws SchedulerException {
@@ -31,12 +31,12 @@ public class ThingServiceImpl implements ThingService {
         map.put("type",thing.getType());
         map.put("tag",thing.getTag());
         map.put("name",thing.getName());
-        map.put("alertToken",thing.getAlertToken());
+        map.put("userId",thing.getUserid());
         String token = thing.getAlertToken();
         if(thing.getAlertToken()!=null){
             map.put("alertToken",token);
         }
-        JobDetail job = JobBuilder.newJob(FWAlertJob.class)
+        JobDetail job = JobBuilder.newJob(FWPushingJob.class)
                 .withIdentity(thing.getName(),thing.getTag())
                 .usingJobData(map)
                 .build();
@@ -47,7 +47,7 @@ public class ThingServiceImpl implements ThingService {
                 .withIdentity(thing.getName(),thing.getTag())
                 .startAt(Date.from(start))
                 .endAt(Date.from(end))
-                .withSchedule(schedulerUtils.getInterval(type).repeatForever())
+                .withSchedule(quartzService.getInterval(type).repeatForever())
                 .usingJobData(map)
                 .build();
         scheduler.scheduleJob(job,trigger);

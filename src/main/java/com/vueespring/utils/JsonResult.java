@@ -15,15 +15,16 @@ public class JsonResult {
     public Integer status;
     public Object data;
     public String message;
+    public JsonResult ok(String message) {
+        return new JsonResult(200,null,message);
+    }
     public JsonResult ok(Object data){
         return new JsonResult(200,data,null);
     }
     public JsonResult ok(Object data,String msg){
         return new JsonResult(200,data,msg);
     }
-    public JsonResult ok(String message) {
-        return new JsonResult(200,message,null);
-    }
+
     public JsonResult error(String msg){
         return new JsonResult(500,null,msg);
     }

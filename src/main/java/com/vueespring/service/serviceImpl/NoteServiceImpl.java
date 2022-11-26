@@ -29,19 +29,20 @@ import java.util.regex.Pattern;
 @Service
 public class NoteServiceImpl extends ServiceImpl<NoteMapper, Note> implements INoteService {
     @Override
-    public String saveImg(MultipartFile file, String dir) throws IOException {
+    public String saveImg(MultipartFile file, String dir,String username) throws IOException {
         //匹配扩展名
         String regex = "(?=\\.)(.+)$";
         Matcher matcher = Pattern.compile(regex)
                 .matcher(Objects.requireNonNull(file.getOriginalFilename()));
         if(matcher.find()){
-            String filename = IdUtil.fastSimpleUUID()+matcher.group(1);
-            String filepath = dir+"\\"+ IdUtil.fastSimpleUUID()+matcher.group(1);
+            String filename = IdUtil.fastSimpleUUID() + matcher.group(1);
+            String filepath = dir + "/" + username+"/" + filename;
             File path = new File(filepath);
-            if (!path.exists()) {
-                if (path.mkdirs()) {
-                    file.transferTo(path);
-                    return "http://192.168.2.247/" + filename;
+            File AbFile = new File(path.getAbsolutePath());
+            if (!AbFile.exists()) {
+                if (AbFile.mkdirs()) {
+                   file.transferTo(AbFile);
+                    return username+'/'+filename;
                 }
             }
         }

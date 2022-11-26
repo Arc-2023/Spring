@@ -10,10 +10,5 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SchedulerUtils {
-    public SimpleScheduleBuilder getInterval(Integer type){
-        SimpleScheduleBuilder simpleScheduleBuilder = SimpleScheduleBuilder.simpleSchedule()
-                .repeatForever();
-            simpleScheduleBuilder.withIntervalInHours(48/type);
-        return simpleScheduleBuilder;
-    }
+
 }

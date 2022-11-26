@@ -5,9 +5,11 @@ import com.vueespring.entity.Note;
 import com.vueespring.entity.WebEntity.NoteCard;
 import com.vueespring.mapper.NoteMapper;
 import com.vueespring.service.INoteService;
+import com.vueespring.service.IOService;
 import com.vueespring.utils.JsonResult;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,12 +20,13 @@ import java.util.*;
 @RestController
 public class NoteController {
 
-    String path = "C:\\Users\\ARC\\Desktop\\PROJECTS\\vuee-spring\\src\\main\\resources\\static";
+    String path = "src/main/resources/static/files/imgs";
     @Autowired
     public INoteService iNoteService;
     @Autowired
     NoteMapper noteMapper;
-
+    @Autowired
+    IOService ioService;
     @GetMapping("/getAllnotes")
     @RequiresAuthentication
     public JsonResult getAllNotes(String username) {
@@ -45,12 +48,12 @@ public class NoteController {
     }
     @PostMapping("/uploadimage")
     public JsonResult uploadImage(
-            @RequestParam("username") String username,
+            @RequestPart("username") String username,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
-        String result = iNoteService.saveImg(file,path+"\\"+username);
+        String result = iNoteService.saveImg(file,path,username);
         if(!result.equals("Faild")){
-            return new JsonResult().ok("http://192.168.2.247/" + result);
+            return new JsonResult().ok(result);
         }
         return new JsonResult().error("faild");
     }
@@ -89,5 +92,13 @@ public class NoteController {
         if(iNoteService.count(queryWrapper)>0) return new JsonResult().error("existing title");
         if(noteMapper.insert(note)!=1) return new JsonResult().error("faild to insert");
         else return new JsonResult().ok(iNoteService.getOne(queryWrapper).getId());
+    }
+    @GetMapping("/delimg")
+    public JsonResult delimg(@RequestParam String filename){
+        if(ioService.delImgByPath(filename)){
+            return new JsonResult().ok("success");
+        }else {
+            return new JsonResult().error("faild");
+        }
     }
 }

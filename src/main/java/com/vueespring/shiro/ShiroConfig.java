@@ -62,6 +62,7 @@ public class ShiroConfig {
     public ShiroFilterChainDefinition shiroFilterChainDefinition(){
         DefaultShiroFilterChainDefinition shiroFilterChainDefinition = new DefaultShiroFilterChainDefinition();
         LinkedHashMap<String,String> map = new LinkedHashMap<String, String>();
+        map.put("/files/**","anon");
         map.put("/login","anon");
         map.put("/**","jwt");
         shiroFilterChainDefinition.addPathDefinitions(map);

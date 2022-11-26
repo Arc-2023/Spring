@@ -19,7 +19,7 @@ import java.util.List;
  */
 public interface INoteService extends IService<Note> {
 
-    String saveImg(MultipartFile file, String dir) throws IOException;
+    String saveImg(MultipartFile file, String dir,String username) throws IOException;
 
     List<NoteCard> getNoteCards(QueryWrapper<Note> wrapper);
 }

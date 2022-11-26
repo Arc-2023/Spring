@@ -72,7 +72,8 @@ public class ThingsController {
         JwtToken token = (JwtToken) SecurityUtils.getSubject().getPrincipal();
         Integer id = Integer.valueOf(JwtUtils.getClaimByToken(token.token).getSubject());
         QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
-                .eq("userid",id);
+                .eq("userid",id)
+                .orderByAsc("endTime");
         List<Thingstable> tabledata = thingstableMapper.selectList(queryWrapper);
         if(tabledata==null){
             return new JsonResult().error("Don't have items");
@@ -166,13 +167,12 @@ public class ThingsController {
         if(list!=null){
             list.forEach(item->item.setStatus("Pause"));
             quartzservice.pausethings(list);
-            if(iThingstableService.updateBatchById(list)){
-                return new JsonResult().ok("Stopped");
-            }
-        }else {
-            return new JsonResult().error("Item not found");
-        }
-        return new JsonResult().ok("Stop Faild");
+            list.parallelStream().forEach(item->{
+                iThingstableService.updateById(item);
+
+            });
+            return new JsonResult().ok("Paused");
+    }else return new JsonResult().ok("Pause Faild");
     }
     @GetMapping("/initstart")
     public JsonResult initstart() throws Exception {
