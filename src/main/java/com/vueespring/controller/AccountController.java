@@ -2,7 +2,11 @@ package com.vueespring.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.vueespring.entity.ThingEnity;
 import com.vueespring.entity.WebEntity.UserEntity;
+import com.vueespring.service.QuartzService;
+import com.vueespring.service.ThingService;
+import com.vueespring.service.ThingsService;
 import com.vueespring.service.UserService;
 import com.vueespring.utils.JsonResult;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -33,6 +38,10 @@ public class AccountController {
     UserService userService;
     @Autowired
     MongoTemplate mongoTemplate;
+    @Autowired
+    QuartzService quartzService;
+    @Autowired
+    ThingService thingService;
     @RequestMapping("/login")
     public SaResult login(@RequestParam(value="username")String username,
                           @RequestParam(value="password")String password,
@@ -94,6 +103,8 @@ public class AccountController {
                 .is(user.getId()));
         Update update = new Update();
         update.set("alertToken",token);
+        Query query1 = new Query(Criteria.where("userid")
+                .is(user.getId()));
 
         if(user==null){
             return SaResult.error("未找到用户，token无法修改");
@@ -102,6 +113,14 @@ public class AccountController {
         user.setAlertToken(token);
 
         mongoTemplate.updateFirst(query,update,UserEntity.class);
-        return SaResult.ok("update success");
+        mongoTemplate.updateFirst(query1,update, ThingEnity.class);
+        List<ThingEnity> list = mongoTemplate.find(query1, ThingEnity.class);
+        try {
+            quartzService.startThings(list.stream().filter(item -> thingService.checkAndSetStatus(item).equals("Running")).collect(Collectors.toList()));
+        }
+        catch (Exception e){
+            return SaResult.error("token已修改,Things未重新启动，你可以刷新或者重新添加事务");
+        }
+        return SaResult.ok("token已修改,Things已重新启动");
     }
 }

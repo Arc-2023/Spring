@@ -40,7 +40,7 @@ public class QuartzServiceImpl implements QuartzService {
     }
     @Override
     public Boolean pausethings(List<ThingEnity> list) throws Exception{
-        list.stream().parallel().forEach(thing->{
+        list.forEach(thing->{
             thingService.pausething(thing, scheduler);
         });
         return true;

@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -42,20 +43,20 @@ public class ThingsController {
 
     @PostMapping("/addThing")
     @SaCheckLogin
-    public SaResult addThing(@RequestBody Itemtity itemtity){
+    public SaResult addThing(@RequestBody Itemtity itemtity) {
 
         Query query = new Query(Criteria
                 .where("name")
                 .is(itemtity.getName()));
-        if(mongoTemplate.exists(query, Itemtity.class)){
+        if (mongoTemplate.exists(query, Itemtity.class)) {
             return SaResult.error("名称已经存在");
         }
         String loginId = (String) StpUtil.getLoginIdAsString();
         UserEntity user = userService.getUserById(loginId);
         assert user != null;
-        if(user.getAlertToken()==null)
+        if (user.getAlertToken() == null)
             return SaResult.error("AlertToken空");
-        ThingEnity thing = thingService.getThingByVoe(itemtity,user.getId(),user);
+        ThingEnity thing = thingService.getThingByVoe(itemtity, user.getId(), user);
         mongoTemplate.insert(thing);
         return SaResult.ok("插入Thing成功");
     }
@@ -70,7 +71,7 @@ public class ThingsController {
 
         quartzservice.startThings(thingEnities
                 .parallelStream()
-                .filter(item-> thingService.checkAndSetStatus(item).equals("Running"))
+                .filter(item -> thingService.checkAndSetStatus(item).equals("Running"))
                 .collect(Collectors.toList()));
         return new SaResult().setData(thingEnities)
                 .setCode(200)
@@ -82,9 +83,9 @@ public class ThingsController {
         Query query = new Query(Criteria.where("id").is(item.getId()));
         Update update = updateService.getUpdateByItem(item);
         ThingEnity thing = mongoTemplate.findOne(query, ThingEnity.class);
-        if(thing==null){
+        if (thing == null) {
             return SaResult.error("Don't Exist");
-        }else {
+        } else {
             List<ThingEnity> listpre = new ArrayList<ThingEnity>();
             listpre.add(thing);
             quartzservice.delthings(listpre);
@@ -118,62 +119,68 @@ public class ThingsController {
             return SaResult.ok("del successfully");
         }
     }
+
     @GetMapping("/startItem")
     public SaResult startItem(String id) throws Exception {
-        String loginId = (String) StpUtil.getLoginIdAsString();
+        String loginId = StpUtil.getLoginIdAsString();
         UserEntity user = userService.getUserById(loginId);
         Query query = new Query(Criteria.where("id").is(id));
         ThingEnity thing = mongoTemplate.findOne(query, ThingEnity.class);
 
-        if (thing == null || user.getUsername()==thing.getCreater()) {
+        if (thing == null || user.getUsername() == thing.getCreater()) {
             return SaResult.error("Don't Exist");
-        }else {
+        } else {
             LocalDateTime now = LocalDateTime.now();
-            if(thing.getStatus()=="Running"){
+            if (thing.getStatus() == "Running") {
                 return SaResult.error("Already Running");
-            }else if(thing.getEndTime().isBefore(now)){
+            } else if (thing.getEndTime().isBefore(now)) {
                 thing.setStatus("Expired");
-                mongoTemplate.updateFirst(query,updateService.updateThingEnity(thing), ThingEnity.class);
+                mongoTemplate.updateFirst(query, updateService.updateThingEnity(thing), ThingEnity.class);
                 return SaResult.error("Expired");
-            }else {
+            } else {
                 thing.setStatus("Running");
                 List<ThingEnity> list = new ArrayList<ThingEnity>();
                 list.add(thing);
-                if(quartzservice.startThings(list)){
-                    mongoTemplate.updateFirst(query,updateService.updateThingEnity(thing), ThingEnity.class);
+                if (quartzservice.startThings(list)) {
+                    mongoTemplate.updateFirst(query, updateService.updateThingEnity(thing), ThingEnity.class);
                     return SaResult.ok("started");
-                }else {
+                } else {
                     return SaResult.error("faild to start");
                 }
             }
         }
     }
+
     @GetMapping("/pauseItem")
     public SaResult pauseItem(String id) throws Exception {
-        String loginId = (String) StpUtil.getLoginIdAsString();
+        String loginId = StpUtil.getLoginIdAsString();
         UserEntity user = userService.getUserById(loginId);
         Query query = new Query(Criteria.where("id").is(id));
         ThingEnity thing = mongoTemplate.findOne(query, ThingEnity.class);
-        if(thing!=null || Objects.equals(user.getUsername(), thing.getCreater())){
+        if (thing != null){
+            return SaResult.error("无此事务");
+        }
+        else if(Objects.equals(user.getUsername(), thing.getCreater())) {
             List<ThingEnity> things = new ArrayList<>();
             thing.setStatus("Pause");
             quartzservice.pausethings(things);
-            things.parallelStream().forEach(item->{
-                mongoTemplate.updateFirst(query,updateService.updateThingEnity(item), ThingEnity.class);
+            things.forEach(item -> {
+                mongoTemplate.updateFirst(query, updateService.updateThingEnity(item), ThingEnity.class);
             });
-            return SaResult.ok("Paused");
-    }else return SaResult.ok("Pause Faild");
+            return SaResult.ok("Pause");
+        }
+        else return SaResult.error("无权限");
     }
 
     @GetMapping("/initStart")
     public SaResult initStart() throws Exception {
-        String loginId = (String) StpUtil.getLoginIdAsString();
+        String loginId = StpUtil.getLoginIdAsString();
         UserEntity user = userService.getUserById(loginId);
 
         Query query = new Query(Criteria.where("creater").is(user.getUsername()));
         List<ThingEnity> things = mongoTemplate.find(query, ThingEnity.class);
         quartzservice.initstart();
-        quartzservice.startThings(things.stream().filter(item-> thingService.checkAndSetStatus(item).equals("Running")).collect(Collectors.toList()));
+        quartzservice.startThings(things.stream().filter(item -> thingService.checkAndSetStatus(item).equals("Running")).collect(Collectors.toList()));
         return SaResult.ok("init successfully");
     }
 

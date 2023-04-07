@@ -47,8 +47,8 @@ public class NoteController {
 
     @GetMapping("/getImage/{filename}")
     public void getImage(@PathVariable("filename") String filename,
-                             HttpServletResponse response,
-                             HttpServletRequest request) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+                         HttpServletResponse response,
+                         HttpServletRequest request) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
 //        String loginId =  StpUtil.getLoginIdAsString();
 //        Query query = new Query(Criteria.where("filename").is(filename));
 //        FileEntity entity = mongoTemplate.findOne(query, FileEntity.class);
@@ -57,6 +57,7 @@ public class NoteController {
                 .object(filename)
                 .build();
         GetObjectResponse response1 = minioClient.getObject(args);
+
         response1.transferTo(response.getOutputStream());
     }
 
@@ -73,7 +74,7 @@ public class NoteController {
     @SaCheckLogin
     public SaResult getNote(String id,
                             HttpServletRequest request) {
-        String loginId = (String) StpUtil.getLoginIdAsString();
+        String loginId = StpUtil.getLoginIdAsString();
         UserEntity user = userService.getUserById(loginId);
         NoteEnity noteEnity = noteService.getNoteById(id);
         if (noteEnity.getCreater() != user.getUsername()) return SaResult.error("没有权限");
@@ -91,7 +92,11 @@ public class NoteController {
             HttpServletRequest request
     ) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
         String filename;
-        filename = noteService.saveImg(file);
+        try {
+            filename = noteService.saveImg(file);
+        } catch (Exception e) {
+            return SaResult.error("上传失败");
+        } ;
         return new SaResult()
                 .setData(filename)
                 .setCode(200);
@@ -128,8 +133,6 @@ public class NoteController {
     @PostMapping("/addNote")
     @SaCheckLogin
     public SaResult addNote(@RequestBody(required = false) NoteEnity noteEnity) {
-        // @RequestParam("title") String title,
-        // @RequestParam("data") String data)
         Query query = new Query(Criteria
                 .where("title")
                 .is(noteEnity.getTitle())

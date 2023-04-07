@@ -10,7 +10,7 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author Cyk
@@ -24,7 +24,6 @@ public class UserEntity implements Serializable {
     private static final long serialVersionUID = 1L;
     @Id
     private String id;
-
     private String username;
 
     private String password;
@@ -32,10 +31,19 @@ public class UserEntity implements Serializable {
     private String permission;
 
     private String alertToken;
+    private String avatar;
 
 
     public String getId() {
         return id;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 
     public void setId(String id) {
@@ -77,11 +85,11 @@ public class UserEntity implements Serializable {
     @Override
     public String toString() {
         return "UserEntity{" +
-            "id = " + id +
-            ", username = " + username +
-            ", password = " + password +
-            ", permission = " + permission +
-            ", alertToken = " + alertToken +
-        "}";
+                "id = " + id +
+                ", username = " + username +
+                ", password = " + password +
+                ", permission = " + permission +
+                ", alertToken = " + alertToken +
+                "}";
     }
 }
