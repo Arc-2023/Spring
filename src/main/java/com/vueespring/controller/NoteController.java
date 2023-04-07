@@ -1,104 +1,159 @@
 package com.vueespring.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.vueespring.entity.Note;
-import com.vueespring.entity.WebEntity.NoteCard;
-import com.vueespring.mapper.NoteMapper;
-import com.vueespring.service.INoteService;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.util.SaResult;
+import com.vueespring.entity.FileEntity;
+import com.vueespring.entity.NoteEnity;
+import com.vueespring.entity.WebEntity.UserEntity;
+import com.vueespring.service.NoteService;
 import com.vueespring.service.IOService;
-import com.vueespring.utils.JsonResult;
-import org.apache.shiro.authz.annotation.RequiresAuthentication;
+import com.vueespring.service.UserService;
+import io.minio.GetObjectArgs;
+import io.minio.GetObjectResponse;
+import io.minio.MinioClient;
+import io.minio.errors.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 @RestController
 public class NoteController {
 
-    String path = "src/main/resources/static/files/imgs";
+    @Value("${minio.bucketName}")
+    String bucketname;
     @Autowired
-    public INoteService iNoteService;
-    @Autowired
-    NoteMapper noteMapper;
+    public NoteService noteService;
     @Autowired
     IOService ioService;
-    @GetMapping("/getAllnotes")
-    @RequiresAuthentication
-    public JsonResult getAllNotes(String username) {
-        QueryWrapper<Note> queryWrapper = new QueryWrapper<Note>()
-                .eq("creater", username);
-        List<NoteCard> cards = iNoteService.getNoteCards(queryWrapper);
-        return new JsonResult().ok(cards);
+    @Autowired
+    UserService userService;
+    @Autowired
+    MongoTemplate mongoTemplate;
+    @Autowired
+    MinioClient minioClient;
+
+    @GetMapping("/getImage/{filename}")
+    public void getImage(@PathVariable("filename") String filename,
+                             HttpServletResponse response,
+                             HttpServletRequest request) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+//        String loginId =  StpUtil.getLoginIdAsString();
+//        Query query = new Query(Criteria.where("filename").is(filename));
+//        FileEntity entity = mongoTemplate.findOne(query, FileEntity.class);
+        GetObjectArgs args = GetObjectArgs.builder()
+                .bucket(bucketname)
+                .object(filename)
+                .build();
+        GetObjectResponse response1 = minioClient.getObject(args);
+        response1.transferTo(response.getOutputStream());
     }
-    @GetMapping("/getnotecontent")
-    @RequiresAuthentication
-    public JsonResult getNoteContent(Integer id) {
-        QueryWrapper<Note> queryWrapper = new QueryWrapper<Note>()
-                .eq("id", id);
-        Note note = iNoteService.getOne(queryWrapper);
-        if (note != null) {
-            return new JsonResult().ok(note);
+
+    @GetMapping("/getAllNotes")
+    public SaResult getAllNotes() {
+        String loginId = StpUtil.getLoginIdAsString();
+        UserEntity user = userService.getUserById(loginId);
+        List<NoteEnity> cards = noteService.getNotes(user.getUsername());
+        if (cards == null) return SaResult.error("没找到你的笔记");
+        return new SaResult().setCode(200).setData(cards);
+    }
+
+    @GetMapping("/getNote")
+    @SaCheckLogin
+    public SaResult getNote(String id,
+                            HttpServletRequest request) {
+        String loginId = (String) StpUtil.getLoginIdAsString();
+        UserEntity user = userService.getUserById(loginId);
+        NoteEnity noteEnity = noteService.getNoteById(id);
+        if (noteEnity.getCreater() != user.getUsername()) return SaResult.error("没有权限");
+        if (noteEnity != null) {
+            return new SaResult().setData(noteEnity)
+                    .setCode(200);
         }
-        return new JsonResult().error("Not Found");
+        return SaResult.error("没有找到笔记内容");
     }
-    @PostMapping("/uploadimage")
-    public JsonResult uploadImage(
-            @RequestPart("username") String username,
-            @RequestPart("file") MultipartFile file
-    ) throws IOException {
-        String result = iNoteService.saveImg(file,path,username);
-        if(!result.equals("Faild")){
-            return new JsonResult().ok(result);
-        }
-        return new JsonResult().error("faild");
+
+    @PostMapping("/uploadImage")
+    @SaCheckLogin
+    public SaResult uploadImage(
+            @RequestPart("file") MultipartFile file,
+            HttpServletRequest request
+    ) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        String filename;
+        filename = noteService.saveImg(file);
+        return new SaResult()
+                .setData(filename)
+                .setCode(200);
     }
-    @GetMapping("/delnote")
-    public JsonResult delNote(Integer id){
-        QueryWrapper<Note> queryWrapper = new QueryWrapper<Note>()
-                .eq("id",id);
-        if(iNoteService.remove(queryWrapper)){
-            return new JsonResult().ok("del Success");
-        }else {
-            return new JsonResult().error("del faild");
-        }
-    }
-    @PostMapping ("/submitcontent")
-    public JsonResult submitNote(
-            @RequestBody Note note){
-        QueryWrapper<Note> queryWrapper = new QueryWrapper<Note>()
-                .eq("id",note.getId());
-        if(iNoteService.update(note,queryWrapper)){
-            return new JsonResult().ok("submit success");
-        }else {
-            return new JsonResult().error("submit faild");
+
+    @GetMapping("/delNote")
+    @SaCheckLogin
+    public SaResult delNote(String id,
+                            HttpServletRequest request) {
+        if (noteService.removeNoteById(id)) {
+            return SaResult.ok("成功删除笔记");
+        } else {
+            return SaResult.error("删除失败");
         }
     }
-    @PostMapping("/addnote")
-    public JsonResult addnote(@RequestBody(required = false) NoteCard card) {
-                             // @RequestParam("title") String title,
-                             // @RequestParam("data") String data){
-        Note note = new Note();
-        note.setCreater(card.getCreater());
-        note.setIntro(card.getIntro());
-        note.setTitle(card.getTitle());
-        QueryWrapper<Note> queryWrapper = new QueryWrapper<Note>()
-                .eq("creater",card.getCreater())
-                .eq("title",card.getTitle());
-        if(iNoteService.count(queryWrapper)>0) return new JsonResult().error("existing title");
-        if(noteMapper.insert(note)!=1) return new JsonResult().error("faild to insert");
-        else return new JsonResult().ok(iNoteService.getOne(queryWrapper).getId());
+
+    @PostMapping("/updateNote")
+    @SaCheckLogin
+    public SaResult updateNote(
+            @RequestBody NoteEnity noteEnity) {
+        Query query = new Query(Criteria
+                .where("id")
+                .is(noteEnity.getId()));
+        Update update = new Update();
+        update.set("id", noteEnity.getId());
+        update.set("title", noteEnity.getTitle());
+        update.set("creater", noteEnity.getCreater());
+        update.set("intro", noteEnity.getIntro());
+        update.set("content", noteEnity.getContent());
+        mongoTemplate.updateFirst(query, update, NoteEnity.class);
+        return SaResult.ok("成功更新");
     }
-    @GetMapping("/delimg")
-    public JsonResult delimg(@RequestParam String filename){
-        if(ioService.delImgByPath(filename)){
-            return new JsonResult().ok("success");
-        }else {
-            return new JsonResult().error("faild");
+
+    @PostMapping("/addNote")
+    @SaCheckLogin
+    public SaResult addNote(@RequestBody(required = false) NoteEnity noteEnity) {
+        // @RequestParam("title") String title,
+        // @RequestParam("data") String data)
+        Query query = new Query(Criteria
+                .where("title")
+                .is(noteEnity.getTitle())
+                .and("creater")
+                .is(noteEnity.getCreater()));
+        String loginId = StpUtil.getLoginIdAsString();
+        UserEntity user = userService.getUserById(loginId);
+        NoteEnity note = mongoTemplate.findOne(query, NoteEnity.class);
+        if (note == null) {
+            note = new NoteEnity();
+            note.setTitle(noteEnity.getTitle());
+            note.setCreater(user.getUsername());
+            note.setIntro(noteEnity.getIntro());
+            mongoTemplate.insert(note);
+        } else {
+            return SaResult.ok("已经存在");
         }
+        return SaResult.ok("添加成功");
+    }
+
+    @GetMapping("/deleteImage")
+    @SaCheckLogin
+    public SaResult deleteImage(@RequestParam String filename) {
+        return ioService.delByFileName(filename);
+
     }
 }

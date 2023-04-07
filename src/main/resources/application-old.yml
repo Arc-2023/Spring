@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: vuee-spring
+  mvc:
+    static-path-pattern: /**
+  resources:
+    static-locations: file:static/,classpath:/static/,classpath:src/main/resources/static,file:src/main/resources/static
+  datasource:
+    url: jdbc:mysql://119.23.243.88:3306/vue-spring?serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    username: root
+    password: 123456qwe
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      auto-commit: true
+      pool-name: mysql-pool
+      connection-timeout: 30000
+      connection-test-query: select now()
+      max-lifetime: 50000000
+  redis:
+    password: 123456QWE
+    database: 1
+    host: 127.0.0.1
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 1000MB
+      max-request-size: 1000MB
+  jackson:
+    time-zone: GMT+8
+
+server:
+  port: 8888
+  servlet:
+    encoding:
+      charset: UTF-8
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false

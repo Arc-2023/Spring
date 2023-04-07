@@ -1,189 +1,180 @@
 package com.vueespring.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.vueespring.service.ThingService;
-import com.vueespring.service.serviceImpl.QuartzServiceImpl;
-import com.vueespring.entity.Thingstable;
-import com.vueespring.entity.WebEntity.Item.ItemVOEntity;
-import com.vueespring.entity.WebEntity.UserVoeEntity;
-import com.vueespring.mapper.ThingstableMapper;
-import com.vueespring.service.IThingstableService;
-import com.vueespring.service.IUserVoeTableService;
-import com.vueespring.shiro.JwtToken;
-import com.vueespring.shiro.JwtUtils;
-import com.vueespring.utils.JsonResult;
-import com.vueespring.utils.ThingItemUtils;
-import io.jsonwebtoken.Claims;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authz.annotation.RequiresAuthentication;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.util.SaResult;
+import com.vueespring.entity.ThingEnity;
+import com.vueespring.service.ThingService;
+import com.vueespring.service.UpdateService;
+import com.vueespring.service.UserService;
+import com.vueespring.service.serviceImpl.QuartzServiceImpl;
+import com.vueespring.entity.WebEntity.Item.Itemtity;
+import com.vueespring.entity.WebEntity.UserEntity;
+import com.vueespring.service.ThingsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
 public class ThingsController {
     @Autowired
-    public ThingstableMapper thingstableMapper;
-    @Autowired
-    public IThingstableService iThingstableService;
-    @Autowired
-    public JwtUtils jwtUtils;
+    public ThingsService thingsService;
     @Autowired
     public QuartzServiceImpl quartzservice;
     @Autowired
-    public IUserVoeTableService iUserVoeTableService;
+    public UserService userService;
     @Autowired
     public ThingService thingService;
     @Autowired
-    public ThingItemUtils thingItemUtils;
-    @PostMapping("/additem")
-    public JsonResult additem(@RequestBody ItemVOEntity itemVOEntity,
-                              HttpServletRequest request){
-        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
-                .eq("id",itemVOEntity.getId());
-        Integer count = iThingstableService.count(queryWrapper);
-        if(count>0){
-            return new JsonResult().error("Already existed");
-        }else {
-            String token = request.getHeader("token");
-            Claims claimByToken = jwtUtils.getClaimByToken(token);
-            String userid = claimByToken.getSubject();
-            UserVoeEntity userinfo = iUserVoeTableService.getById(userid);
-            if(userinfo==null){
-                return new JsonResult().error("token错误或者无用户");
-            }
-            Thingstable thingstable = thingService.getThingByVoe(itemVOEntity, userid, userinfo);
-            if(thingstableMapper.insert(thingstable) > 0){
-                return new JsonResult().ok("Submit Successfully");
-            }else {
-                return new JsonResult().error("Submit Faild");
-            }
+    MongoTemplate mongoTemplate;
+    @Autowired
+    UpdateService updateService;
+
+    @PostMapping("/addThing")
+    @SaCheckLogin
+    public SaResult addThing(@RequestBody Itemtity itemtity){
+
+        Query query = new Query(Criteria
+                .where("name")
+                .is(itemtity.getName()));
+        if(mongoTemplate.exists(query, Itemtity.class)){
+            return SaResult.error("名称已经存在");
         }
+        String loginId = (String) StpUtil.getLoginIdAsString();
+        UserEntity user = userService.getUserById(loginId);
+        assert user != null;
+        if(user.getAlertToken()==null)
+            return SaResult.error("AlertToken空");
+        ThingEnity thing = thingService.getThingByVoe(itemtity,user.getId(),user);
+        mongoTemplate.insert(thing);
+        return SaResult.ok("插入Thing成功");
     }
 
-    @GetMapping("/refreshthings")
-    @RequiresAuthentication
-    public JsonResult refreshThings() throws Exception {
-        JwtToken token = (JwtToken) SecurityUtils.getSubject().getPrincipal();
-        Integer id = Integer.valueOf(JwtUtils.getClaimByToken(token.token).getSubject());
-        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
-                .eq("userid",id)
-                .orderByAsc("endTime");
-        List<Thingstable> tabledata = thingstableMapper.selectList(queryWrapper);
-        if(tabledata==null){
-            return new JsonResult().error("Don't have items");
-        }
-        quartzservice.startThings(tabledata
+    @GetMapping("/refreshThings")
+    public SaResult refreshThings(@RequestParam("username") String username) throws Exception {
+
+
+        UserEntity user = userService.getUserByUsername(username);
+        Query query = new Query(Criteria.where("creater").is(username));
+        List<ThingEnity> thingEnities = mongoTemplate.find(query, ThingEnity.class);
+
+        quartzservice.startThings(thingEnities
                 .parallelStream()
                 .filter(item-> thingService.checkAndSetStatus(item).equals("Running"))
                 .collect(Collectors.toList()));
-        return new JsonResult().ok(tabledata);
+        return new SaResult().setData(thingEnities)
+                .setCode(200)
+                .setMsg("成功刷新");
     }
 
-    @PostMapping("/changeitem")
-    @RequiresAuthentication
-    public JsonResult changeitem(@RequestBody ItemVOEntity item) throws Exception {
-        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
-                .eq("id",item.getId());
-        Thingstable thing = iThingstableService.getOne(queryWrapper);
+    @PostMapping("/updateThing")
+    public SaResult updateThing(@RequestBody Itemtity item) throws Exception {
+        Query query = new Query(Criteria.where("id").is(item.getId()));
+        Update update = updateService.getUpdateByItem(item);
+        ThingEnity thing = mongoTemplate.findOne(query, ThingEnity.class);
         if(thing==null){
-            return new JsonResult().error("Don't Exist");
+            return SaResult.error("Don't Exist");
         }else {
-            List<Thingstable> listpre = new ArrayList<Thingstable>();
+            List<ThingEnity> listpre = new ArrayList<ThingEnity>();
             listpre.add(thing);
             quartzservice.delthings(listpre);
-            iThingstableService.setThingByItem(item, thing);
+            thingsService.setThingByItem(item, thing);
 
-            if(thingstableMapper.updateById(thing)>0){
-                if(thing.getStatus().equals("Running")){
-                    List<Thingstable> listnow = new ArrayList<Thingstable>();
-                    listnow.add(thing);
-                    quartzservice.startThings(listnow);
-                }
-                return new JsonResult().ok("insert successfully");
+            mongoTemplate.updateFirst(query, update, ThingEnity.class);
+            if (thing.getStatus().equals("Running")) {
+                List<ThingEnity> listnow = new ArrayList<ThingEnity>();
+                listnow.add(thing);
+                quartzservice.startThings(listnow);
             }
-            else {
-                return new JsonResult().error("insert faild");
-            }
+            return SaResult.ok("insert successfully");
         }
     }
 
-    @GetMapping("/delitem")
-    @RequiresAuthentication
-    public JsonResult delitem(Integer id) {
-        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
-                .eq("id",id);
-        Thingstable thing = iThingstableService.getOne(queryWrapper);
-        if (thing == null) {
-            return new JsonResult().error("Don't Exist");
+    @GetMapping("/delItem")
+    public SaResult delItem(@RequestParam("id") String id) {
+
+        String loginId = StpUtil.getLoginIdAsString();
+        UserEntity user = userService.getUserById(loginId);
+
+        Query query = new Query(Criteria.where("id").is(id));
+
+        ThingEnity thing = mongoTemplate.findOne(query, ThingEnity.class);
+
+
+        if (thing == null || !Objects.equals(user.getUsername(), thing.getCreater())) {
+            return SaResult.error("Don't Exist");
         } else {
-            if (thingstableMapper.deleteById(id) > 0) {
-                return new JsonResult().ok("del successfully");
-            } else {
-                return new JsonResult().error("del faild");
-            }
+            mongoTemplate.remove(query, ThingEnity.class);
+            return SaResult.ok("del successfully");
         }
     }
-    @GetMapping("/startitem")
-    @RequiresAuthentication
-    public JsonResult startItem(Integer id) throws Exception {
-        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
-                .eq("id",id);
-        Thingstable thing = iThingstableService.getOne(queryWrapper);
-        if (thing == null) {
-            return new JsonResult().error("Don't Exist");
+    @GetMapping("/startItem")
+    public SaResult startItem(String id) throws Exception {
+        String loginId = (String) StpUtil.getLoginIdAsString();
+        UserEntity user = userService.getUserById(loginId);
+        Query query = new Query(Criteria.where("id").is(id));
+        ThingEnity thing = mongoTemplate.findOne(query, ThingEnity.class);
+
+        if (thing == null || user.getUsername()==thing.getCreater()) {
+            return SaResult.error("Don't Exist");
         }else {
             LocalDateTime now = LocalDateTime.now();
             if(thing.getStatus()=="Running"){
-                return new JsonResult().error("Already Running");
+                return SaResult.error("Already Running");
             }else if(thing.getEndTime().isBefore(now)){
                 thing.setStatus("Expired");
-                iThingstableService.updateById(thing);
-                return new JsonResult().error("Expired");
+                mongoTemplate.updateFirst(query,updateService.updateThingEnity(thing), ThingEnity.class);
+                return SaResult.error("Expired");
             }else {
                 thing.setStatus("Running");
-                List<Thingstable> list = new ArrayList<Thingstable>();
+                List<ThingEnity> list = new ArrayList<ThingEnity>();
                 list.add(thing);
                 if(quartzservice.startThings(list)){
-                    thingstableMapper.updateById(thing);
-                    return new JsonResult().ok("started");
+                    mongoTemplate.updateFirst(query,updateService.updateThingEnity(thing), ThingEnity.class);
+                    return SaResult.ok("started");
                 }else {
-                    return new JsonResult().error("faild to start");
+                    return SaResult.error("faild to start");
                 }
             }
         }
     }
-    @GetMapping("/pauseitem")
-    @RequiresAuthentication
-    public JsonResult pauseitem(Integer id) throws Exception {
-        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
-                .eq("id",id);
-        List<Thingstable> list  = iThingstableService.list(queryWrapper);
-        if(list!=null){
-            list.forEach(item->item.setStatus("Pause"));
-            quartzservice.pausethings(list);
-            list.parallelStream().forEach(item->{
-                iThingstableService.updateById(item);
-
+    @GetMapping("/pauseItem")
+    public SaResult pauseItem(String id) throws Exception {
+        String loginId = (String) StpUtil.getLoginIdAsString();
+        UserEntity user = userService.getUserById(loginId);
+        Query query = new Query(Criteria.where("id").is(id));
+        ThingEnity thing = mongoTemplate.findOne(query, ThingEnity.class);
+        if(thing!=null || Objects.equals(user.getUsername(), thing.getCreater())){
+            List<ThingEnity> things = new ArrayList<>();
+            thing.setStatus("Pause");
+            quartzservice.pausethings(things);
+            things.parallelStream().forEach(item->{
+                mongoTemplate.updateFirst(query,updateService.updateThingEnity(item), ThingEnity.class);
             });
-            return new JsonResult().ok("Paused");
-    }else return new JsonResult().ok("Pause Faild");
+            return SaResult.ok("Paused");
+    }else return SaResult.ok("Pause Faild");
     }
-    @GetMapping("/initstart")
-    public JsonResult initstart() throws Exception {
-        JwtToken token = (JwtToken) SecurityUtils.getSubject().getPrincipal();
-        Integer id = Integer.valueOf(JwtUtils.getClaimByToken(token.token).getSubject());
-        QueryWrapper<Thingstable> queryWrapper = new QueryWrapper<Thingstable>()
-                .eq("id",id);
+
+    @GetMapping("/initStart")
+    public SaResult initStart() throws Exception {
+        String loginId = (String) StpUtil.getLoginIdAsString();
+        UserEntity user = userService.getUserById(loginId);
+
+        Query query = new Query(Criteria.where("creater").is(user.getUsername()));
+        List<ThingEnity> things = mongoTemplate.find(query, ThingEnity.class);
         quartzservice.initstart();
-        quartzservice.startThings(iThingstableService.list(queryWrapper)
-                .stream().filter(item-> thingService.checkAndSetStatus(item).equals("Running")).collect(Collectors.toList()));
-        return new JsonResult().ok("init successfully");
+        quartzservice.startThings(things.stream().filter(item-> thingService.checkAndSetStatus(item).equals("Running")).collect(Collectors.toList()));
+        return SaResult.ok("init successfully");
     }
 
 }

@@ -1,11 +1,12 @@
 package com.vueespring.service.serviceImpl;
 
 import com.vueespring.Scheduler.FWPushingJob;
-import com.vueespring.entity.Thingstable;
-import com.vueespring.entity.WebEntity.Item.ItemVOEntity;
-import com.vueespring.entity.WebEntity.UserVoeEntity;
+import com.vueespring.entity.ThingEnity;
+import com.vueespring.entity.WebEntity.Item.Itemtity;
+import com.vueespring.entity.WebEntity.UserEntity;
 import com.vueespring.service.QuartzService;
 import com.vueespring.service.ThingService;
+import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,12 +18,13 @@ import java.time.ZoneId;
 
 
 @Service
+@Slf4j
 public class ThingServiceImpl implements ThingService {
     @Autowired
     QuartzService quartzService;
 
     @Override
-    public void creatitem(Thingstable thing, Scheduler scheduler) throws SchedulerException {
+    public void creatitem(ThingEnity thing, Scheduler scheduler) throws SchedulerException {
         Integer type = thing.getType();
         JobDataMap map = new JobDataMap();
         map.put("message",thing.getMessage());
@@ -32,9 +34,11 @@ public class ThingServiceImpl implements ThingService {
         map.put("tag",thing.getTag());
         map.put("name",thing.getName());
         map.put("userId",thing.getUserid());
-        String token = thing.getAlertToken();
-        if(thing.getAlertToken()!=null){
-            map.put("alertToken",token);
+        if (thing.getAlertToken() == null) {
+            log.error("empty token: "+thing);
+            return;
+        } else {
+            map.put("alertToken", thing.getAlertToken());
         }
         JobDetail job = JobBuilder.newJob(FWPushingJob.class)
                 .withIdentity(thing.getName(),thing.getTag())
@@ -53,17 +57,17 @@ public class ThingServiceImpl implements ThingService {
         scheduler.scheduleJob(job,trigger);
     }
     @Override
-    public void startitem(Thingstable thingstable, Scheduler scheduler) throws SchedulerException {
-        JobKey key = JobKey.jobKey(thingstable.getName(),thingstable.getTag());
+    public void startitem(ThingEnity thingEnity, Scheduler scheduler) throws SchedulerException {
+        JobKey key = JobKey.jobKey(thingEnity.getName(), thingEnity.getTag());
         if(scheduler.checkExists(key)){
             scheduler.resumeJob(key);
             System.out.println("Resuming Job "+key);
         }else {
-            this.creatitem(thingstable,scheduler);
+            this.creatitem(thingEnity,scheduler);
         }
     }
     @Override
-    public void pausething(Thingstable thing, Scheduler scheduler){
+    public void pausething(ThingEnity thing, Scheduler scheduler){
         JobKey key = JobKey.jobKey(thing.getName(),thing.getTag());
         try {
             scheduler.pauseJob(key);
@@ -72,12 +76,12 @@ public class ThingServiceImpl implements ThingService {
         }
     }
     @Override
-    public void delthing(Thingstable thing,Scheduler scheduler) throws SchedulerException {
+    public void delthing(ThingEnity thing, Scheduler scheduler) throws SchedulerException {
         JobKey key = JobKey.jobKey(thing.getName(),thing.getTag());
         scheduler.deleteJob(key);
     }
     @Override
-    public String checkAndSetStatus(Thingstable thing){
+    public String checkAndSetStatus(ThingEnity thing){
         if(thing.getEndTime().isBefore(LocalDateTime.now())){
             thing.setStatus("Expired");
             return "Expired";
@@ -86,18 +90,18 @@ public class ThingServiceImpl implements ThingService {
         }
     }
     @Override
-    public Thingstable getThingByVoe(ItemVOEntity itemVOEntity, String userid, UserVoeEntity userinfo) {
-        Thingstable thingstable = new Thingstable();
-        thingstable.setName(itemVOEntity.getName());
-        thingstable.setStartTime(itemVOEntity.getStartTime());
-        thingstable.setEndTime(itemVOEntity.getEndTime());
-        thingstable.setMessage(itemVOEntity.getMessage());
-        thingstable.setType(itemVOEntity.getType());
-        thingstable.setTag(itemVOEntity.getTag());
-        thingstable.setUserid(Integer.parseInt(userid));
-        thingstable.setCreater(userinfo.getUsername());
-        thingstable.setAlertToken(itemVOEntity.getAlertToken());
-        thingstable.setStatus("Pause");
-        return thingstable;
+    public ThingEnity getThingByVoe(Itemtity itemtity, String userid, UserEntity userinfo) {
+        ThingEnity thingEnity = new ThingEnity();
+        thingEnity.setName(itemtity.getName());
+        thingEnity.setStartTime(itemtity.getStartTime());
+        thingEnity.setEndTime(itemtity.getEndTime());
+        thingEnity.setMessage(itemtity.getMessage());
+        thingEnity.setType(itemtity.getType());
+        thingEnity.setTag(itemtity.getTag());
+        thingEnity.setUserid(userid);
+        thingEnity.setCreater(userinfo.getUsername());
+        thingEnity.setAlertToken(userinfo.getAlertToken());
+        thingEnity.setStatus("Pause");
+        return thingEnity;
     }
 }

@@ -1,10 +1,8 @@
 package com.vueespring.service.serviceImpl;
 
-import com.vueespring.entity.Thingstable;
-import com.vueespring.entity.WebEntity.Item.ItemVOEntity;
-import com.vueespring.mapper.ThingstableMapper;
-import com.vueespring.service.IThingstableService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.vueespring.entity.ThingEnity;
+import com.vueespring.entity.WebEntity.Item.Itemtity;
+import com.vueespring.service.ThingsService;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,9 +14,9 @@ import org.springframework.stereotype.Service;
  * @since 2022-10-24
  */
 @Service
-public class ThingstableServiceImpl extends ServiceImpl<ThingstableMapper, Thingstable> implements IThingstableService {
+public class ThingstableServiceImpl implements ThingsService {
     @Override
-    public void setThingByItem(ItemVOEntity item, Thingstable thing) {
+    public void setThingByItem(Itemtity item, ThingEnity thing) {
         thing.setName(item.getName());
         thing.setStartTime(item.getStartTime());
         thing.setEndTime(item.getEndTime());

@@ -20,8 +20,10 @@ public class FWPushingJob extends QuartzJobBean {
         JobDataMap jobDataMap = detail.getJobDataMap();
         Map<String,Object> map = new HashMap<>();
         log.debug(String.valueOf(jobDataMap));
-        String token = "79bd4013-bd17-4c3e-9371-9119849790f7";
         fwAlertJobService.setMapByJob(jobDataMap, map);
-        fwAlertJobService.sendFWAlert(map, token);
+        if(map.get("alertToken")==null){
+            log.error("token empty!");
+        }
+        else{fwAlertJobService.sendFWAlert(map);}
     }
 }
