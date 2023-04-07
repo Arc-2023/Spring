@@ -1,5 +1,7 @@
 package com.vueespring.service;
 
+import cn.dev33.satoken.util.SaResult;
+
 public interface IOService {
-    Boolean delImgByPath(String path);
+    SaResult delByFileName(String path);
 }

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 public interface FWAlertJobService {
-    void sendFWAlert(Map<String, Object> map, String token);
+    void sendFWAlert(Map<String, Object> map);
 
     void setMapByJob(JobDataMap jobDataMap, Map<String, Object> map);
 }

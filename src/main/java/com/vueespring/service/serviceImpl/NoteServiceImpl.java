@@ -1,66 +1,91 @@
 package com.vueespring.service.serviceImpl;
 
+import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.vueespring.entity.Note;
-import com.vueespring.entity.WebEntity.NoteCard;
-import com.vueespring.mapper.NoteMapper;
-import com.vueespring.service.INoteService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.vueespring.entity.FileEntity;
+import com.vueespring.entity.NoteEnity;
+import com.vueespring.entity.WebEntity.NoteCardEnity;
+import com.vueespring.service.NoteService;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
+import io.minio.errors.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author Cyk
  * @since 2022-10-27
  */
 @Service
-public class NoteServiceImpl extends ServiceImpl<NoteMapper, Note> implements INoteService {
-    @Override
-    public String saveImg(MultipartFile file, String dir,String username) throws IOException {
-        //匹配扩展名
-        String regex = "(?=\\.)(.+)$";
-        Matcher matcher = Pattern.compile(regex)
-                .matcher(Objects.requireNonNull(file.getOriginalFilename()));
-        if(matcher.find()){
-            String filename = IdUtil.fastSimpleUUID() + matcher.group(1);
-            String filepath = dir + "/" + username+"/" + filename;
-            File path = new File(filepath);
-            File AbFile = new File(path.getAbsolutePath());
-            if (!AbFile.exists()) {
-                if (AbFile.mkdirs()) {
-                   file.transferTo(AbFile);
-                    return username+'/'+filename;
-                }
-            }
-        }
-        return null;
-    }
-    @Override
-    public List<NoteCard> getNoteCards(QueryWrapper<Note> wrapper){
+public class NoteServiceImpl implements NoteService {
+    @Autowired
+    MongoTemplate mongoTemplate;
+    @Value("${minio.bucketName}")
+    String bucketName;
+    @Autowired
+    MinioClient minioClient;
 
-        List<NoteCard> cards = new ArrayList<NoteCard>();
-        list(wrapper).parallelStream().forEach(item->{
-            NoteCard card = new NoteCard();
-            card.setTitle(item.getTitle());
-            card.setId(item.getId());
-            card.setCreater(item.getCreater());
-            card.setIntro(item.getIntro());
-            cards.add(card);
-        });
+    @Override
+    public String saveImg(MultipartFile file) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        //匹配扩展名
+//        String regex = "(?=\\.)(.+)$";
+//        Matcher matcher = Pattern.compile(regex)
+//                .matcher(Objects.requireNonNull(file.getOriginalFilename()));
+        String fileid = IdUtil.fastSimpleUUID();
+        String filename = fileid +"."+ FileUtil.getSuffix(file.getOriginalFilename());
+//            String filename = IdUtil.fastSimpleUUID() + matcher.group(1);
+        HashMap<String, String> metadata = new HashMap<>();
+        metadata.put("userid", StpUtil.getLoginIdAsString());
+        PutObjectArgs putObjectArgs = PutObjectArgs
+                .builder()
+                .stream(file.getInputStream(), file.getSize(), -1)
+                .object(fileid)
+                .bucket(bucketName)
+                .userMetadata(metadata)
+                .build();
+        minioClient.putObject(putObjectArgs);
+        FileEntity fileEntity = new FileEntity();
+        fileEntity.setUploaderid(StpUtil.getLoginIdAsString());
+        fileEntity.setFilename(filename);
+        mongoTemplate.insert(fileEntity);
+        return filename;
+    }
+
+    @Override
+    public List<NoteEnity> getNotes(String creater) {
+        List<NoteEnity> cards = mongoTemplate.find(new Query(Criteria.where("creater").is(creater)), NoteEnity.class);
         return cards;
+    }
+
+    @Override
+    public NoteEnity getNoteById(String id) {
+        return mongoTemplate.findById(id, NoteEnity.class);
+    }
+
+    @Override
+    public Boolean removeNoteById(String id) {
+        if (getNoteById(id) == null) return false;
+        Query query = new Query(Criteria.where("id").is(id));
+        mongoTemplate.remove(query, NoteEnity.class);
+        mongoTemplate.remove(query, NoteCardEnity.class);
+        return true;
+
     }
 
 }

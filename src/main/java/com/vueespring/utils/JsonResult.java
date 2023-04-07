@@ -15,8 +15,8 @@ public class JsonResult {
     public Integer status;
     public Object data;
     public String message;
-    public JsonResult ok(String message) {
-        return new JsonResult(200,null,message);
+    public JsonResult ok(String msg) {
+        return new JsonResult(200,null,msg);
     }
     public JsonResult ok(Object data){
         return new JsonResult(200,data,null);

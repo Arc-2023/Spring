@@ -1,39 +1,34 @@
 package com.vueespring.service.serviceImpl;
 
-import com.vueespring.entity.Thingstable;
-import com.vueespring.mapper.ThingstableMapper;
-import com.vueespring.service.IThingstableService;
+import com.vueespring.entity.ThingEnity;
+import com.vueespring.service.ThingsService;
 import com.vueespring.service.QuartzService;
 import com.vueespring.service.ThingService;
 import lombok.Data;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Data
-@Component
 @Service
 public class QuartzServiceImpl implements QuartzService {
     @Autowired
-    public IThingstableService iThingstableService;
+    public ThingsService iThingstableService;
     @Autowired
-    public ThingstableMapper mapper;
     private Scheduler scheduler;
     @Autowired
     public ThingService thingService;
     @Override
     public Boolean initstart() throws SchedulerException {
-        if(scheduler==null) scheduler = StdSchedulerFactory.getDefaultScheduler();
         scheduler.clear();
         scheduler.start();
         return true;
     }
     @Override
-    public Boolean startThings(List<Thingstable> list) throws Exception{
+    public Boolean startThings(List<ThingEnity> list) throws Exception{
         list.parallelStream().forEach(thing->{
             try {
                 thingService.startitem(thing,scheduler);
@@ -44,16 +39,15 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
     @Override
-    public Boolean pausethings(List<Thingstable> list) throws Exception{
-        list.stream().forEach(thing->{
+    public Boolean pausethings(List<ThingEnity> list) throws Exception{
+        list.stream().parallel().forEach(thing->{
             thingService.pausething(thing, scheduler);
-
         });
         return true;
     }
     @Override
-    public Boolean delthings(List<Thingstable> list) throws Exception{
-        list.stream().forEach(thing->{
+    public Boolean delthings(List<ThingEnity> list) throws Exception{
+        list.forEach(thing->{
             try {
                 thingService.delthing(thing,scheduler);
             } catch (SchedulerException e) {
@@ -66,7 +60,7 @@ public class QuartzServiceImpl implements QuartzService {
     public SimpleScheduleBuilder getInterval(Integer type){
         SimpleScheduleBuilder simpleScheduleBuilder = SimpleScheduleBuilder.simpleSchedule()
                 .repeatForever();
-        simpleScheduleBuilder.withIntervalInHours(48/type);
+        simpleScheduleBuilder.withIntervalInHours(type);
         return simpleScheduleBuilder;
     }
 
