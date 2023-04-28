@@ -9,6 +9,7 @@ import com.vueespring.entity.WebEntity.UserEntity;
 import com.vueespring.service.NoteService;
 import com.vueespring.service.IOService;
 import com.vueespring.service.UserService;
+import com.vueespring.utils.RedisOperator;
 import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
 import io.minio.MinioClient;
@@ -19,18 +20,20 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 @RestController
-public class NoteController {
+public class NoteController implements Serializable {
 
     @Value("${minio.bucketName}")
     String bucketname;
@@ -44,6 +47,8 @@ public class NoteController {
     MongoTemplate mongoTemplate;
     @Autowired
     MinioClient minioClient;
+    @Autowired
+    RedisOperator redisOperator;
 
     @GetMapping("/getImage/{filename}")
     public void getImage(@PathVariable("filename") String filename,
@@ -52,12 +57,13 @@ public class NoteController {
 //        String loginId =  StpUtil.getLoginIdAsString();
 //        Query query = new Query(Criteria.where("filename").is(filename));
 //        FileEntity entity = mongoTemplate.findOne(query, FileEntity.class);
+
         GetObjectArgs args = GetObjectArgs.builder()
                 .bucket(bucketname)
                 .object(filename)
                 .build();
         GetObjectResponse response1 = minioClient.getObject(args);
-
+//        redisOperator.set(filename,args);
         response1.transferTo(response.getOutputStream());
     }
 
