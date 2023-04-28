@@ -12,7 +12,7 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowedMethods("GET","POST","PUT","DELETE","OPTIONS")
                 .allowCredentials(true)
-                .allowedOrigins("*")
+                .allowedOrigins("https://vue.220608.xyz")
                 .maxAge(3600);
     }
 }

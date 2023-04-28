@@ -152,16 +152,17 @@ public class ThingsController {
     }
 
     @GetMapping("/pauseItem")
-    public SaResult pauseItem(String id) throws Exception {
+    public SaResult pauseItem(@RequestParam("id") String id) throws Exception {
         String loginId = StpUtil.getLoginIdAsString();
         UserEntity user = userService.getUserById(loginId);
         Query query = new Query(Criteria.where("id").is(id));
         ThingEnity thing = mongoTemplate.findOne(query, ThingEnity.class);
-        if (thing != null){
+        if (thing == null){
             return SaResult.error("无此事务");
         }
         else if(Objects.equals(user.getUsername(), thing.getCreater())) {
             List<ThingEnity> things = new ArrayList<>();
+            things.add(thing);
             thing.setStatus("Pause");
             quartzservice.pausethings(things);
             things.forEach(item -> {
