@@ -9,24 +9,30 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RedisOperator {
     @Autowired
-    RedisTemplate redisTemplate;
-    public boolean hasKey(String key){
+    RedisTemplate<String, Object> redisTemplate;
+
+    public boolean hasKey(String key) {
         return redisTemplate.hasKey(key);
     }
-    public long ttl(String key){
+
+    public long ttl(String key) {
         return redisTemplate.getExpire(key);
     }
-    public void expire(String key,long time){
-        redisTemplate.expire(key,time, TimeUnit.SECONDS);
+
+    public void expire(String key, long time) {
+        redisTemplate.expire(key, time, TimeUnit.SECONDS);
     }
-    public void set(String key,Object value){
-        redisTemplate.opsForValue().set(key,value);
+
+    public void set(String key, Object value) {
+        redisTemplate.opsForValue().set(key, value);
     }
-    public void del(String k){
+
+    public void del(String k) {
         redisTemplate.delete(k);
     }
-    public void incr(String k,long v){
-        redisTemplate.opsForValue().increment(k,v);
+
+    public void incr(String k, long v) {
+        redisTemplate.opsForValue().increment(k, v);
     }
 
 }

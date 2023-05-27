@@ -5,6 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.vueespring.entity.FileEntity;
 import com.vueespring.entity.NoteEnity;
+import com.vueespring.entity.WebEntity.NoteCardEnity;
 import com.vueespring.entity.WebEntity.UserEntity;
 import com.vueespring.service.NoteService;
 import com.vueespring.service.IOService;
@@ -14,6 +15,7 @@ import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
 import io.minio.MinioClient;
 import io.minio.errors.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -33,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 @RestController
+@Slf4j
 public class NoteController implements Serializable {
 
     @Value("${minio.bucketName}")
@@ -102,7 +105,8 @@ public class NoteController implements Serializable {
             filename = noteService.saveImg(file);
         } catch (Exception e) {
             return SaResult.error("上传失败");
-        } ;
+        }
+        ;
         return new SaResult()
                 .setData(filename)
                 .setCode(200);
@@ -164,5 +168,27 @@ public class NoteController implements Serializable {
     public SaResult deleteImage(@RequestParam String filename) {
         return ioService.delByFileName(filename);
 
+    }
+
+    //    @GetMapping("/getNoteList")
+//    public SaResult getNoteList() {
+//        if (!StpUtil.isLogin()) {
+//            Query query = new Query(Criteria
+//                    .where("type")
+//                    .is("public"));
+//            mongoTemplate.find(query,)
+//
+//        }
+//
+//    }
+    @GetMapping("generCards")
+    public SaResult generCards() {
+        Query query = new Query();
+        List<NoteEnity> noteEnities = mongoTemplate.find(query, NoteEnity.class);
+        ArrayList<NoteCardEnity> noteCardEnities  = new ArrayList<>();
+
+        for (NoteEnity entity : noteEnities) {
+            NoteCardEnity noteCardEnity = new NoteCardEnity();
+        }
     }
 }
