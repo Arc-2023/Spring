@@ -1,5 +1,6 @@
 package com.vueespring.entity.WebEntity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
@@ -17,14 +19,31 @@ public class NoteCardEnity implements Serializable {
     @Id
     private String id;
     private String title;
-    private String creater;
     private String creator;
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm",timezone = "UTC+8")
     private LocalDateTime editTime;
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm",timezone = "Asia/Shanghai")
     private LocalDateTime createdTime;
     private Integer view;
     private String tag;
     private String type;
     private String content;
+    private String noteid;
+
+    @Override
+    public String toString() {
+        return "NoteCardEnity{" +
+                "id='" + id + '\'' +
+                ", title='" + title + '\'' +
+                ", creator='" + creator + '\'' +
+                ", editTime=" + editTime +
+                ", createdTime=" + createdTime +
+                ", view=" + view +
+                ", tag='" + tag + '\'' +
+                ", type='" + type + '\'' +
+                ", content='" + content + '\'' +
+                '}';
+    }
 
     public String getId() {
         return id;
@@ -40,14 +59,6 @@ public class NoteCardEnity implements Serializable {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getCreater() {
-        return creater;
-    }
-
-    public void setCreater(String creater) {
-        this.creater = creater;
     }
 
     public String getCreator() {
@@ -105,21 +116,12 @@ public class NoteCardEnity implements Serializable {
     public void setContent(String content) {
         this.content = content;
     }
-    @Override
-    public String toString() {
-        return "NoteCardEnity{" +
-                "id='" + id + '\'' +
-                ", title='" + title + '\'' +
-                ", creater='" + creater + '\'' +
-                ", creator='" + creator + '\'' +
-                ", editTime=" + editTime +
-                ", createdTime=" + createdTime +
-                ", view=" + view +
-                ", tag='" + tag + '\'' +
-                ", type='" + type + '\'' +
-                ", content='" + content + '\'' +
-                '}';
+
+    public String getNoteid() {
+        return noteid;
     }
 
-
+    public void setNoteid(String noteid) {
+        this.noteid = noteid;
+    }
 }

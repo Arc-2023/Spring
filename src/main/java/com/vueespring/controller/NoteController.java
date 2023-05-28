@@ -3,7 +3,6 @@ package com.vueespring.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
-import com.vueespring.entity.FileEntity;
 import com.vueespring.entity.NoteEnity;
 import com.vueespring.entity.WebEntity.NoteCardEnity;
 import com.vueespring.entity.WebEntity.UserEntity;
@@ -16,13 +15,13 @@ import io.minio.GetObjectResponse;
 import io.minio.MinioClient;
 import io.minio.errors.*;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,7 +31,11 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
+
+import static cn.hutool.core.lang.Console.log;
 
 @RestController
 @Slf4j
@@ -70,28 +73,38 @@ public class NoteController implements Serializable {
         response1.transferTo(response.getOutputStream());
     }
 
-    @GetMapping("/getAllNotes")
-    public SaResult getAllNotes() {
-        String loginId = StpUtil.getLoginIdAsString();
-        UserEntity user = userService.getUserById(loginId);
-        List<NoteEnity> cards = noteService.getNotes(user.getUsername());
-        if (cards == null) return SaResult.error("没找到你的笔记");
-        return new SaResult().setCode(200).setData(cards);
+    @GetMapping("/getNote")
+    public SaResult getNote(String id) {
+        Query q = new Query(Criteria.where("id")
+                .is(id));
+        NoteEnity one = mongoTemplate.findOne(q, NoteEnity.class);
+        if (one == null) return SaResult.error("无此Note");
+        else {
+            if (one.getType().equals("public")) return SaResult.data(one).setMsg("获取成功");
+            else if (!StpUtil.isLogin()) return SaResult.error("未登录，无法获取笔记");
+
+            else {
+                String username = userService.getUserById(StpUtil.getLoginIdAsString()).getUsername();
+                if (!Objects.equals(username, one.getCreater())) {
+                    return SaResult.error("无法访问其他人的笔记");
+                } else return SaResult.data(one).setMsg("获取成功");
+            }
+        }
+
     }
 
-    @GetMapping("/getNote")
-    @SaCheckLogin
-    public SaResult getNote(String id,
-                            HttpServletRequest request) {
+    @GetMapping("/getNoteCards")
+    public SaResult getNoteCards() {
+        ArrayList<NoteCardEnity> publicCards = noteService.getPublicCards();
+        if (!StpUtil.isLogin()) {
+            return SaResult.data(publicCards).setMsg("未登录");
+        }
         String loginId = StpUtil.getLoginIdAsString();
         UserEntity user = userService.getUserById(loginId);
-        NoteEnity noteEnity = noteService.getNoteById(id);
-        if (noteEnity.getCreater() != user.getUsername()) return SaResult.error("没有权限");
-        if (noteEnity != null) {
-            return new SaResult().setData(noteEnity)
-                    .setCode(200);
-        }
-        return SaResult.error("没有找到笔记内容");
+        ArrayList<NoteCardEnity> cardByUsername = noteService.getCardByUsername(user.getUsername());
+        ArrayList<NoteCardEnity> publicCards1 = noteService.getPublicCards();
+        cardByUsername.addAll(publicCards1);
+        return new SaResult().setCode(200).setData(cardByUsername);
     }
 
     @PostMapping("/uploadImage")
@@ -127,16 +140,40 @@ public class NoteController implements Serializable {
     @SaCheckLogin
     public SaResult updateNote(
             @RequestBody NoteEnity noteEnity) {
+        Query qq = new Query(Criteria.where("username").is(userService.getUserById(StpUtil.getLoginIdAsString()).getUsername()));
+        Query qqq = new Query(Criteria.where("id").is(noteEnity.getId()));
+        UserEntity one = mongoTemplate.findOne(qq, UserEntity.class);
+        NoteEnity one1 = mongoTemplate.findOne(qqq, NoteEnity.class);
+        if (one == null || one1 == null) {
+            return SaResult.error("查询错误，检查id");
+        } else if (!one.getUsername().equals(one1.getCreater())) {
+            return SaResult.error("鉴权失败");
+        }
         Query query = new Query(Criteria
                 .where("id")
                 .is(noteEnity.getId()));
+        Query q = new Query(Criteria
+                .where("noteid")
+                .is(noteEnity.getId()));
         Update update = new Update();
-        update.set("id", noteEnity.getId());
         update.set("title", noteEnity.getTitle());
         update.set("creater", noteEnity.getCreater());
         update.set("intro", noteEnity.getIntro());
         update.set("content", noteEnity.getContent());
+        update.set("tag", noteEnity.getTag());
+        update.set("type", noteEnity.getType());
+        Update up = new Update();
+
+        NoteCardEnity card = noteService.setCardByNoteDefault(noteEnity);
+        up.set("title", noteEnity.getTitle());
+        up.set("editTime", LocalDateTime.now());
+        up.set("tag", noteEnity.getTag());
+        up.set("type", noteEnity.getType());
+        up.set("content", noteService.getIntroByContent(noteEnity.getContent()));
+
         mongoTemplate.updateFirst(query, update, NoteEnity.class);
+        mongoTemplate.updateFirst(q, up, NoteCardEnity.class);
+
         return SaResult.ok("成功更新");
     }
 
@@ -156,7 +193,9 @@ public class NoteController implements Serializable {
             note.setTitle(noteEnity.getTitle());
             note.setCreater(user.getUsername());
             note.setIntro(noteEnity.getIntro());
+            NoteCardEnity entity = noteService.setCardByNoteDefault(note);
             mongoTemplate.insert(note);
+            mongoTemplate.insert(entity);
         } else {
             return SaResult.ok("已经存在");
         }
@@ -181,14 +220,28 @@ public class NoteController implements Serializable {
 //        }
 //
 //    }
-    @GetMapping("generCards")
+    @GetMapping("/generCards")
     public SaResult generCards() {
-        Query query = new Query();
-        List<NoteEnity> noteEnities = mongoTemplate.find(query, NoteEnity.class);
-        ArrayList<NoteCardEnity> noteCardEnities  = new ArrayList<>();
+//        Query query = new Query();
+//        List<NoteEnity> noteEnities = mongoTemplate.find(query, NoteEnity.class);
+//        log(noteEnities);
+//        ArrayList<NoteCardEnity> noteCardEnities = new ArrayList<>();
+//
+//        for (NoteEnity entity : noteEnities) {
+//            NoteCardEnity noteCardEnity = noteService.setCardByNoteDefault(entity);
+//            noteCardEnities.add(noteCardEnity);
+//        }
 
-        for (NoteEnity entity : noteEnities) {
-            NoteCardEnity noteCardEnity = new NoteCardEnity();
-        }
+        Query q = new Query();
+        Update up = new Update();
+        up.set("createdTime", LocalDateTime.now());
+        up.set("lastedittime", LocalDateTime.now());
+        up.set("type", "private");
+        up.set("tag", "Default");
+//        mongoTemplate.insert(noteCardEnities, NoteCardEnity.class);
+        mongoTemplate.updateMulti(q, up, "noteenitys");
+        return SaResult.data(mongoTemplate.find(q, NoteEnity.class));
     }
+
+
 }

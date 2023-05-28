@@ -10,6 +10,7 @@ import com.vueespring.service.NoteService;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.errors.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -21,8 +22,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
+
+import static cn.hutool.core.lang.Console.log;
 
 /**
  * <p>
@@ -48,7 +54,7 @@ public class NoteServiceImpl implements NoteService {
 //        Matcher matcher = Pattern.compile(regex)
 //                .matcher(Objects.requireNonNull(file.getOriginalFilename()));
         String fileid = IdUtil.fastSimpleUUID();
-        String filename = fileid +"."+ FileUtil.getSuffix(file.getOriginalFilename());
+        String filename = fileid + "." + FileUtil.getSuffix(file.getOriginalFilename());
 //            String filename = IdUtil.fastSimpleUUID() + matcher.group(1);
         HashMap<String, String> metadata = new HashMap<>();
         metadata.put("userid", StpUtil.getLoginIdAsString());
@@ -82,10 +88,45 @@ public class NoteServiceImpl implements NoteService {
     public Boolean removeNoteById(String id) {
         if (getNoteById(id) == null) return false;
         Query query = new Query(Criteria.where("id").is(id));
+
+        Query q = new Query(Criteria.where("noteid").is(Objects.requireNonNull(mongoTemplate.findOne(query, NoteEnity.class)).getId()));
         mongoTemplate.remove(query, NoteEnity.class);
-        mongoTemplate.remove(query, NoteCardEnity.class);
+        mongoTemplate.remove(q, NoteCardEnity.class);
         return true;
 
+    }
+
+    @NotNull
+    public NoteCardEnity setCardByNoteDefault(NoteEnity entity) {
+        NoteCardEnity noteCardEnity = new NoteCardEnity();
+        String str = entity.getContent() == null ? "null" : entity.getContent().substring(0, 50);
+//        log(str);
+        noteCardEnity.setContent(str);
+        noteCardEnity.setTitle(entity.getTitle());
+        noteCardEnity.setCreator(entity.getCreater());
+        noteCardEnity.setEditTime(LocalDateTime.now());
+        noteCardEnity.setCreatedTime(LocalDateTime.now());
+        noteCardEnity.setView(0);
+        noteCardEnity.setTag("default");
+        noteCardEnity.setType("private");
+        noteCardEnity.setNoteid(entity.getId());
+        return noteCardEnity;
+    }
+    @Override
+    public ArrayList<NoteCardEnity> getCardByUsername(String username) {
+        Query q = new Query(Criteria.where("creator")
+                .is(username));
+        return (ArrayList<NoteCardEnity>) mongoTemplate.find(q, NoteCardEnity.class);
+    }
+    @Override
+    public ArrayList<NoteCardEnity> getPublicCards(){
+        Query q=new Query(Criteria.where("type")
+                .is("public"));
+        return (ArrayList<NoteCardEnity>) mongoTemplate.find(q, NoteCardEnity.class);
+    }
+    @Override
+    public String getIntroByContent(String content){
+        return content == null ? "null" : content.substring(0, 50);
     }
 
 }

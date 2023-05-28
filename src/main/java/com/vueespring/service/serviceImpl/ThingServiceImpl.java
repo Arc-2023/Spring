@@ -27,68 +27,73 @@ public class ThingServiceImpl implements ThingService {
     public void creatitem(ThingEnity thing, Scheduler scheduler) throws SchedulerException {
         Integer type = thing.getType();
         JobDataMap map = new JobDataMap();
-        map.put("message",thing.getMessage());
-        map.put("start_time",thing.getStartTime());
-        map.put("end_time",thing.getEndTime());
-        map.put("type",thing.getType());
-        map.put("tag",thing.getTag());
-        map.put("name",thing.getName());
-        map.put("userId",thing.getUserid());
+        map.put("message", thing.getMessage());
+        map.put("start_time", thing.getStartTime());
+        map.put("end_time", thing.getEndTime());
+        map.put("type", thing.getType());
+        map.put("tag", thing.getTag());
+        map.put("name", thing.getName());
+        map.put("userId", thing.getUserid());
         if (thing.getAlertToken() == null) {
-            log.error("empty token: "+thing);
+            log.error("empty token: " + thing);
             return;
         } else {
             map.put("alertToken", thing.getAlertToken());
         }
         JobDetail job = JobBuilder.newJob(FWPushingJob.class)
-                .withIdentity(thing.getName(),thing.getTag())
+                .withIdentity(thing.getName(), thing.getTag())
                 .usingJobData(map)
                 .build();
-        Instant start = thing.getStartTime().atZone(ZoneId.systemDefault()).toInstant();
-        Instant end = thing.getEndTime().atZone(ZoneId.systemDefault()).toInstant();
+        Instant start = thing.getStartTime().atZone(ZoneId.of("UTC+8")).toInstant();
+        Instant end = thing.getEndTime().atZone(ZoneId.of("UTC+8")).toInstant();
 
         Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity(thing.getName(),thing.getTag())
+                .withIdentity(thing.getName(), thing.getTag())
                 .startAt(Date.from(start))
                 .endAt(Date.from(end))
                 .withSchedule(quartzService.getInterval(type).repeatForever())
                 .usingJobData(map)
                 .build();
-        scheduler.scheduleJob(job,trigger);
+        scheduler.scheduleJob(job, trigger);
     }
+
     @Override
     public void startitem(ThingEnity thingEnity, Scheduler scheduler) throws SchedulerException {
         JobKey key = JobKey.jobKey(thingEnity.getName(), thingEnity.getTag());
-        if(scheduler.checkExists(key)){
+        if (scheduler.checkExists(key)) {
             scheduler.resumeJob(key);
-            System.out.println("Resuming Job "+key);
-        }else {
-            this.creatitem(thingEnity,scheduler);
+            System.out.println("Resuming Job " + key);
+        } else {
+            this.creatitem(thingEnity, scheduler);
         }
     }
+
     @Override
-    public void pausething(ThingEnity thing, Scheduler scheduler){
-        JobKey key = JobKey.jobKey(thing.getName(),thing.getTag());
+    public void pausething(ThingEnity thing, Scheduler scheduler) {
+        JobKey key = JobKey.jobKey(thing.getName(), thing.getTag());
         try {
             scheduler.pauseJob(key);
         } catch (SchedulerException e) {
             throw new RuntimeException(e);
         }
     }
+
     @Override
     public void delthing(ThingEnity thing, Scheduler scheduler) throws SchedulerException {
-        JobKey key = JobKey.jobKey(thing.getName(),thing.getTag());
+        JobKey key = JobKey.jobKey(thing.getName(), thing.getTag());
         scheduler.deleteJob(key);
     }
+
     @Override
-    public String checkAndSetStatus(ThingEnity thing){
-        if(thing.getEndTime().isBefore(LocalDateTime.now())){
+    public String checkAndSetStatus(ThingEnity thing) {
+        if (thing.getEndTime().isBefore(LocalDateTime.now())) {
             thing.setStatus("Expired");
             return "Expired";
-        }else {
+        } else {
             return thing.getStatus();
         }
     }
+
     @Override
     public ThingEnity getThingByVoe(Itemtity itemtity, String userid, UserEntity userinfo) {
         ThingEnity thingEnity = new ThingEnity();

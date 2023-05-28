@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,4 +30,12 @@ public interface NoteService{
     NoteEnity getNoteById(String id);
 
     Boolean removeNoteById(String id);
+
+    NoteCardEnity setCardByNoteDefault(NoteEnity entity);
+
+    ArrayList<NoteCardEnity> getCardByUsername(String username);
+
+    ArrayList<NoteCardEnity> getPublicCards();
+
+    String getIntroByContent(String content);
 }
