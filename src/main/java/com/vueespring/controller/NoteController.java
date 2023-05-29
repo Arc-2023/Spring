@@ -102,8 +102,6 @@ public class NoteController implements Serializable {
         String loginId = StpUtil.getLoginIdAsString();
         UserEntity user = userService.getUserById(loginId);
         ArrayList<NoteCardEnity> cardByUsername = noteService.getCardByUsername(user.getUsername());
-        ArrayList<NoteCardEnity> publicCards1 = noteService.getPublicCards();
-        cardByUsername.addAll(publicCards1);
         return new SaResult().setCode(200).setData(cardByUsername);
     }
 
@@ -165,6 +163,7 @@ public class NoteController implements Serializable {
         Update up = new Update();
 
         NoteCardEnity card = noteService.setCardByNoteDefault(noteEnity);
+
         up.set("title", noteEnity.getTitle());
         up.set("editTime", LocalDateTime.now());
         up.set("tag", noteEnity.getTag());
@@ -180,24 +179,35 @@ public class NoteController implements Serializable {
     @PostMapping("/addNote")
     @SaCheckLogin
     public SaResult addNote(@RequestBody(required = false) NoteEnity noteEnity) {
+        String loginId = StpUtil.getLoginIdAsString();
+        UserEntity user = userService.getUserById(loginId);
         Query query = new Query(Criteria
                 .where("title")
                 .is(noteEnity.getTitle())
                 .and("creater")
-                .is(noteEnity.getCreater()));
-        String loginId = StpUtil.getLoginIdAsString();
-        UserEntity user = userService.getUserById(loginId);
+                .is(user.getUsername()));
+        Query q = new Query(Criteria.where("title")
+                .is(noteEnity.getTitle())
+                .and("username")
+                .is(user.getUsername()));
         NoteEnity note = mongoTemplate.findOne(query, NoteEnity.class);
         if (note == null) {
             note = new NoteEnity();
             note.setTitle(noteEnity.getTitle());
             note.setCreater(user.getUsername());
             note.setIntro(noteEnity.getIntro());
-            NoteCardEnity entity = noteService.setCardByNoteDefault(note);
+            note.setCreatedTime(LocalDateTime.now());
+            note.setLastedittime(LocalDateTime.now());
+            note.setContent("null");
+            note.setType("private");
+            note.setTag("Default");
+
             mongoTemplate.insert(note);
+            note = mongoTemplate.findOne(query, NoteEnity.class);
+            NoteCardEnity entity = noteService.setCardByNoteDefault(note);
             mongoTemplate.insert(entity);
         } else {
-            return SaResult.ok("已经存在");
+            return SaResult.error("已经存在");
         }
         return SaResult.ok("添加成功");
     }

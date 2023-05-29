@@ -18,7 +18,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -27,8 +26,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-
-import static cn.hutool.core.lang.Console.log;
 
 /**
  * <p>
@@ -99,12 +96,12 @@ public class NoteServiceImpl implements NoteService {
     @NotNull
     public NoteCardEnity setCardByNoteDefault(NoteEnity entity) {
         NoteCardEnity noteCardEnity = new NoteCardEnity();
-        String str = entity.getContent() == null ? "null" : entity.getContent().substring(0, 50);
+        String str = getIntroByContent(entity.getContent());
 //        log(str);
         noteCardEnity.setContent(str);
         noteCardEnity.setTitle(entity.getTitle());
         noteCardEnity.setCreator(entity.getCreater());
-        noteCardEnity.setEditTime(LocalDateTime.now());
+        noteCardEnity.setEditTime(entity.getCreatedTime());
         noteCardEnity.setCreatedTime(LocalDateTime.now());
         noteCardEnity.setView(0);
         noteCardEnity.setTag("default");
@@ -112,21 +109,25 @@ public class NoteServiceImpl implements NoteService {
         noteCardEnity.setNoteid(entity.getId());
         return noteCardEnity;
     }
+
     @Override
     public ArrayList<NoteCardEnity> getCardByUsername(String username) {
-        Query q = new Query(Criteria.where("creator")
-                .is(username));
+
+        Criteria criteria = new Criteria().orOperator(Criteria.where("creator")
+                .is(username), Criteria.where("type").is("public"));
+        Query q = new Query(criteria);
         return (ArrayList<NoteCardEnity>) mongoTemplate.find(q, NoteCardEnity.class);
     }
+
     @Override
-    public ArrayList<NoteCardEnity> getPublicCards(){
-        Query q=new Query(Criteria.where("type")
+    public ArrayList<NoteCardEnity> getPublicCards() {
+        Query q = new Query(Criteria.where("type")
                 .is("public"));
         return (ArrayList<NoteCardEnity>) mongoTemplate.find(q, NoteCardEnity.class);
     }
-    @Override
-    public String getIntroByContent(String content){
-        return content == null ? "null" : content.substring(0, 50);
-    }
 
+    @Override
+    public String getIntroByContent(String content) {
+        return content == null ? "null" : content.substring(0, content.length() < 100 ? content.length() : 50);
+    }
 }
