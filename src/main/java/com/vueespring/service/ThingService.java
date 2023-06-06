@@ -5,6 +5,7 @@ import com.vueespring.entity.WebEntity.Item.Itemtity;
 import com.vueespring.entity.WebEntity.UserEntity;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
 
 
 public interface ThingService {
@@ -19,4 +20,6 @@ public interface ThingService {
     String checkAndSetStatus(ThingEnity thing);
 
     ThingEnity getThingByVoe(Itemtity itemtity, String userid, UserEntity userinfo);
+
+    SimpleScheduleBuilder getInterval(Integer type);
 }

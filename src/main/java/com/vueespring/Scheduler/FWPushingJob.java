@@ -22,6 +22,7 @@ public class FWPushingJob extends QuartzJobBean {
 
         if(LocalDateTime.now().isAfter((LocalDateTime)map.get("end"))){
             String message = "Last Mention: " + map.get("message");
+            log.debug("The last mention");
             map.put("message",message);
         }
         if(map.get("alertToken")==null){

@@ -4,7 +4,6 @@ import com.vueespring.Scheduler.FWPushingJob;
 import com.vueespring.entity.ThingEnity;
 import com.vueespring.entity.WebEntity.Item.Itemtity;
 import com.vueespring.entity.WebEntity.UserEntity;
-import com.vueespring.service.QuartzService;
 import com.vueespring.service.ThingService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
@@ -20,9 +19,6 @@ import java.time.ZoneId;
 @Service
 @Slf4j
 public class ThingServiceImpl implements ThingService {
-    @Autowired
-    QuartzService quartzService;
-
     @Override
     public void creatitem(ThingEnity thing, Scheduler scheduler) throws SchedulerException {
         Integer type = thing.getType();
@@ -51,7 +47,7 @@ public class ThingServiceImpl implements ThingService {
                 .withIdentity(thing.getName(), thing.getTag())
                 .startAt(Date.from(start))
                 .endAt(Date.from(end))
-                .withSchedule(quartzService.getInterval(type).repeatForever())
+                .withSchedule(getInterval(type).repeatForever())
                 .usingJobData(map)
                 .build();
         scheduler.scheduleJob(job, trigger);
@@ -108,5 +104,12 @@ public class ThingServiceImpl implements ThingService {
         thingEnity.setAlertToken(userinfo.getAlertToken());
         thingEnity.setStatus("Pause");
         return thingEnity;
+    }
+    @Override
+    public SimpleScheduleBuilder getInterval(Integer type){
+        SimpleScheduleBuilder simpleScheduleBuilder = SimpleScheduleBuilder.simpleSchedule()
+                .repeatForever();
+        simpleScheduleBuilder.withIntervalInHours(type);
+        return simpleScheduleBuilder;
     }
 }

@@ -16,13 +16,4 @@ public interface QuartzService {
 
     Boolean delthings(List<ThingEnity> list) throws Exception;
 
-    SimpleScheduleBuilder getInterval(Integer type);
-
-    void pausething(ThingEnity thing, Scheduler scheduler);
-
-    void startitem(ThingEnity thingEnity, Scheduler scheduler) throws SchedulerException;
-
-    void delthing(ThingEnity thing, Scheduler scheduler) throws SchedulerException;
-
-    void creatitem(ThingEnity thing, Scheduler scheduler) throws SchedulerException;
 }
