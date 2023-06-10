@@ -3,19 +3,19 @@ package com.vueespring.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.io.FileUtil;
 import com.vueespring.entity.NoteEnity;
 import com.vueespring.entity.WebEntity.NoteCardEnity;
 import com.vueespring.entity.WebEntity.UserEntity;
 import com.vueespring.service.NoteService;
 import com.vueespring.service.IOService;
 import com.vueespring.service.UserService;
+import com.vueespring.utils.CurrencyLimiter;
 import com.vueespring.utils.RedisOperator;
 import io.minio.GetObjectArgs;
-import io.minio.GetObjectResponse;
 import io.minio.MinioClient;
 import io.minio.errors.*;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -32,8 +32,10 @@ import java.io.Serializable;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static cn.hutool.core.lang.Console.log;
 
@@ -55,24 +57,40 @@ public class NoteController implements Serializable {
     MinioClient minioClient;
     @Autowired
     RedisOperator redisOperator;
+    @Autowired
+    CurrencyLimiter currencyLimiter;
+    static ExecutorService es = Executors.newFixedThreadPool(5);
 
     @GetMapping("/getImage/{filename}")
     public void getImage(@PathVariable("filename") String filename,
                          HttpServletResponse response,
-                         HttpServletRequest request) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-//        String loginId =  StpUtil.getLoginIdAsString();
-//        Query query = new Query(Criteria.where("filename").is(filename));
-//        FileEntity entity = mongoTemplate.findOne(query, FileEntity.class);
-
+                         HttpServletRequest request) throws Exception {
+        filename= FileUtil.getPrefix(filename);
+        log(filename);
         GetObjectArgs args = GetObjectArgs.builder()
                 .bucket(bucketname)
                 .object(filename)
                 .build();
-        GetObjectResponse response1 = minioClient.getObject(args);
-//        redisOperator.set(filename,args);
-        response1.transferTo(response.getOutputStream());
+        Future<?> future = currencyLimiter.take(args, response);
+        future.get();
     }
-
+    @PostMapping("/uploadImage")
+    @SaCheckLogin
+    public SaResult uploadImage(
+            @RequestPart("file") MultipartFile file,
+            HttpServletRequest request
+    ) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        String filename;
+        try {
+            filename = noteService.saveImg(file);
+        } catch (Exception e) {
+            return SaResult.error("上传失败");
+        }
+        ;
+        return new SaResult()
+                .setData(filename)
+                .setCode(200);
+    }
     @GetMapping("/getNote")
     public SaResult getNote(String id) {
         Query q = new Query(Criteria.where("id")
@@ -105,23 +123,7 @@ public class NoteController implements Serializable {
         return new SaResult().setCode(200).setData(cardByUsername);
     }
 
-    @PostMapping("/uploadImage")
-    @SaCheckLogin
-    public SaResult uploadImage(
-            @RequestPart("file") MultipartFile file,
-            HttpServletRequest request
-    ) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        String filename;
-        try {
-            filename = noteService.saveImg(file);
-        } catch (Exception e) {
-            return SaResult.error("上传失败");
-        }
-        ;
-        return new SaResult()
-                .setData(filename)
-                .setCode(200);
-    }
+
 
     @GetMapping("/delNote")
     @SaCheckLogin

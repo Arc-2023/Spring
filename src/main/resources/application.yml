@@ -23,8 +23,8 @@ spring:
           max-idle: 10
           # 连接池中的最小空闲连接
           min-idle: 0
-  mvc:
-    static-path-pattern: /**
+#  mvc:
+#    static-path-pattern: /**
 
   servlet:
     multipart:
@@ -33,9 +33,9 @@ spring:
       max-request-size: 1000MB
   jackson:
     time-zone: GMT+8
-  web:
-    resources:
-      static-locations: file:static/,classpath:/static/,classpath:src/main/resources/static,file:src/main/resources/static
+#  web:
+#    resources:
+#      static-locations: file:static/,classpath:/static/,classpath:src/main/resources/static,file:src/main/resources/static
 server:
   port: 8888
   servlet:
