@@ -1,7 +1,9 @@
 package com.vueespring.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.mongodb.client.result.UpdateResult;
 import com.vueespring.entity.ThingEnity;
 import com.vueespring.entity.WebEntity.UserEntity;
 import com.vueespring.service.QuartzService;
@@ -112,5 +114,23 @@ public class AccountController {
             return SaResult.error("token已修改,Things未重新启动，你可以刷新或者重新添加事务");
         }
         return SaResult.ok("token已修改,Things已重新启动");
+    }
+
+    @PostMapping("/setUserIcon")
+//    @SaCheckLogin
+    public SaResult setUserIcon(@RequestParam("url") String url) {
+        String loginId = StpUtil.getLoginIdAsString();
+        Query query = new Query(Criteria.where("id")
+                .is(loginId));
+        UserEntity one = mongoTemplate.findOne(query, UserEntity.class);
+        if (one != null) {
+            Update update = new Update();;
+            update.set("avatar",url);
+            UpdateResult updateResult = mongoTemplate.updateFirst(query, update, UserEntity.class);
+            if(updateResult.wasAcknowledged()) return SaResult.ok("更新成功");
+        }else {
+            return SaResult.error("用户信息错误");
+        }
+        return SaResult.error("更新失败");
     }
 }
