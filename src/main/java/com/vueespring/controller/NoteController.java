@@ -46,7 +46,7 @@ public class NoteController implements Serializable {
     @Value("${minio.bucketName}")
     String bucketname;
     @Autowired
-    public NoteService noteService;
+    NoteService noteService;
     @Autowired
     IOService ioService;
     @Autowired

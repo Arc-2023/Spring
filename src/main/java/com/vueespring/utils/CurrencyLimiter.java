@@ -30,14 +30,11 @@ public class CurrencyLimiter {
     static AtomicInteger limit = new AtomicInteger(0);
     static ExecutorService es= Executors.newFixedThreadPool(3);
     public Future<?> take(GetObjectArgs args, HttpServletResponse res){
-        return es.submit(new Runnable() {
-            @Override
-            public void run() {
-                try{
-                    doDownLoad(args,res);
-                }catch (Exception e){
-                    throw new RuntimeException(e);
-                }
+        return es.submit(() -> {
+            try{
+                doDownLoad(args,res);
+            }catch (Exception e){
+                throw new RuntimeException(e);
             }
         });
 

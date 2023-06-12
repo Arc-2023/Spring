@@ -27,9 +27,7 @@ public class UserEntity implements Serializable {
     private String username;
 
     private String password;
-
     private String permission;
-
     private String alertToken;
     private String avatar;
 
