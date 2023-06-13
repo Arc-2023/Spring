@@ -25,7 +25,6 @@ spring:
           min-idle: 0
 #  mvc:
 #    static-path-pattern: /**
-
   servlet:
     multipart:
       enabled: true

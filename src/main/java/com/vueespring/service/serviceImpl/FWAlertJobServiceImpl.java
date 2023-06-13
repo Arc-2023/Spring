@@ -9,15 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import jakarta.annotation.Resource;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
 @Slf4j
 @Service
 public class FWAlertJobServiceImpl implements FWAlertJobService {
-    @Resource
-    RestTemplate restTemplate;
     @Override
     public void sendFWAlert(Map<String, Object> map) {
         log.debug(String.valueOf(map));

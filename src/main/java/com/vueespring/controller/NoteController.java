@@ -25,8 +25,8 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.InvalidKeyException;
@@ -67,8 +67,7 @@ public class NoteController implements Serializable {
                          HttpServletResponse response,
                          HttpServletRequest request) throws Exception {
         filename= FileUtil.getPrefix(filename);
-        log(filename);
-        booleans.put(true);
+//        booleans.put(true);
 
         GetObjectArgs args = GetObjectArgs.builder()
                 .bucket(bucketname)
@@ -76,7 +75,7 @@ public class NoteController implements Serializable {
                 .build();
         Future<?> future = currencyLimiter.take(args, response);
         future.get();
-        booleans.take();
+//        booleans.take();
     }
     @PostMapping("/uploadImage")
     @SaCheckLogin
