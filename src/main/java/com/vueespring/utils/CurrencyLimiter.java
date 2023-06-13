@@ -25,15 +25,16 @@ import static cn.hutool.core.lang.Console.log;
 public class CurrencyLimiter {
     @Autowired
     MinioClient minioClient;
-    private static final Semaphore semaphore = new Semaphore(5,true);
+    private static final Semaphore semaphore = new Semaphore(5, true);
     static ReentrantLock lock = new ReentrantLock(true);
     static AtomicInteger limit = new AtomicInteger(0);
-    static ExecutorService es= Executors.newFixedThreadPool(3);
-    public Future<?> take(GetObjectArgs args, HttpServletResponse res){
+    static ExecutorService es = Executors.newFixedThreadPool(3);
+
+    public Future<?> take(GetObjectArgs args, HttpServletResponse res) {
         return es.submit(() -> {
-            try{
-                doDownLoad(args,res);
-            }catch (Exception e){
+            try {
+                doDownLoad(args, res);
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });

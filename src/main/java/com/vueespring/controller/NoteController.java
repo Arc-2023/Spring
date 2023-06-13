@@ -33,6 +33,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -60,19 +61,22 @@ public class NoteController implements Serializable {
     @Autowired
     CurrencyLimiter currencyLimiter;
     static ExecutorService es = Executors.newFixedThreadPool(5);
-
+    ArrayBlockingQueue<Boolean> booleans = new ArrayBlockingQueue<>(3);
     @GetMapping("/getImage/{filename}")
     public void getImage(@PathVariable("filename") String filename,
                          HttpServletResponse response,
                          HttpServletRequest request) throws Exception {
         filename= FileUtil.getPrefix(filename);
         log(filename);
+        booleans.put(true);
+
         GetObjectArgs args = GetObjectArgs.builder()
                 .bucket(bucketname)
                 .object(filename)
                 .build();
         Future<?> future = currencyLimiter.take(args, response);
         future.get();
+        booleans.take();
     }
     @PostMapping("/uploadImage")
     @SaCheckLogin
