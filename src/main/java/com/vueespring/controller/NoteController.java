@@ -139,8 +139,7 @@ public class NoteController implements Serializable {
 
     @GetMapping("/delNote")
     @SaCheckLogin
-    public SaResult delNote(String id,
-                            HttpServletRequest request) {
+    public SaResult delNote(String id, HttpServletRequest request) {
         if (noteService.removeNoteById(id)) {
             return SaResult.ok("成功删除笔记");
         } else {

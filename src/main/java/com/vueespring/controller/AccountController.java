@@ -19,7 +19,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -113,19 +115,19 @@ public class AccountController {
         return SaResult.ok("token已修改,Things已重新启动");
     }
 
-    @PostMapping("/setUserIcon")
-//    @SaCheckLogin
-    public SaResult setUserIcon(@RequestParam("url") String url) {
+    @PostMapping(value = "/setUserIcon")
+    public SaResult setUserIcon(@RequestBody Map<String, String> payload) {
         String loginId = StpUtil.getLoginIdAsString();
         Query query = new Query(Criteria.where("id")
                 .is(loginId));
         UserEntity one = mongoTemplate.findOne(query, UserEntity.class);
         if (one != null) {
-            Update update = new Update();;
-            update.set("avatar",url);
+            Update update = new Update();
+            ;
+            update.set("avatar", payload.get("url"));
             UpdateResult updateResult = mongoTemplate.updateFirst(query, update, UserEntity.class);
-            if(updateResult.wasAcknowledged()) return SaResult.ok("更新成功");
-        }else {
+            if (updateResult.wasAcknowledged()) return SaResult.ok("更新成功");
+        } else {
             return SaResult.error("用户信息错误");
         }
         return SaResult.error("更新失败");

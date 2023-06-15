@@ -6,18 +6,24 @@ import cn.hutool.core.util.IdUtil;
 import com.vueespring.entity.FileEntity;
 import com.vueespring.entity.NoteEnity;
 import com.vueespring.entity.WebEntity.NoteCardEnity;
+import com.vueespring.entity.WebEntity.UserEntity;
 import com.vueespring.service.NoteService;
+import com.vueespring.utils.RedisOperator;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.errors.*;
+import jakarta.annotation.Resource;
+import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -43,6 +49,8 @@ public class NoteServiceImpl implements NoteService {
     String bucketName;
     @Autowired
     MinioClient minioClient;
+    @Autowired
+    RedisOperator redisOperator;
 
     @Override
     public String saveImg(MultipartFile file) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
@@ -87,10 +95,16 @@ public class NoteServiceImpl implements NoteService {
         Query query = new Query(Criteria.where("id").is(id));
 
         Query q = new Query(Criteria.where("noteid").is(Objects.requireNonNull(mongoTemplate.findOne(query, NoteEnity.class)).getId()));
-        mongoTemplate.remove(query, NoteEnity.class);
-        mongoTemplate.remove(q, NoteCardEnity.class);
-        return true;
+        Query userq = new Query(Criteria.where("id")
+                .is(StpUtil.getLoginIdAsString()));
 
+        UserEntity user = mongoTemplate.findOne(userq, UserEntity.class);
+        NoteEnity note = mongoTemplate.findOne(query, NoteEnity.class);
+        if (note != null && user != null && Objects.equals(user.getUsername(), note.getCreater())) {
+            mongoTemplate.remove(query, NoteEnity.class);
+            mongoTemplate.remove(q, NoteCardEnity.class);
+            return true;
+        } else return false;
     }
 
     @NotNull
@@ -131,7 +145,7 @@ public class NoteServiceImpl implements NoteService {
         return content == null ? "null" : content.substring(0, content.length() < 100 ? content.length() : 50);
     }
 
-    public Boolean increaseViewCount(){
+    public Boolean increaseViewCount() {
         return true;
     }
 
