@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
 import com.vueespring.entity.NoteEnity;
 import com.vueespring.entity.WebEntity.NoteCardEnity;
 import com.vueespring.entity.WebEntity.UserEntity;
@@ -13,8 +14,11 @@ import com.vueespring.service.UserService;
 import com.vueespring.utils.CurrencyLimiter;
 import com.vueespring.utils.RedisOperator;
 import io.minio.GetObjectArgs;
+import io.minio.GetObjectResponse;
 import io.minio.MinioClient;
 import io.minio.errors.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,18 +29,13 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 import static cn.hutool.core.lang.Console.log;
 
@@ -59,24 +58,22 @@ public class NoteController implements Serializable {
     @Autowired
     RedisOperator redisOperator;
     @Autowired
-    CurrencyLimiter currencyLimiter;
-    static ExecutorService es = Executors.newFixedThreadPool(5);
-    ArrayBlockingQueue<Boolean> booleans = new ArrayBlockingQueue<>(3);
+    CurrencyLimiter limiter;
+
     @GetMapping("/getImage/{filename}")
     public void getImage(@PathVariable("filename") String filename,
                          HttpServletResponse response,
-                         HttpServletRequest request) throws Exception {
-        filename= FileUtil.getPrefix(filename);
-//        booleans.put(true);
-
-        GetObjectArgs args = GetObjectArgs.builder()
-                .bucket(bucketname)
-                .object(filename)
-                .build();
-        Future<?> future = currencyLimiter.take(args, response);
-        future.get();
-//        booleans.take();
+                         HttpServletRequest request) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, ExecutionException, InterruptedException {
+//        String loginId =  StpUtil.getLoginIdAsString();
+//        Query query = new Query(Criteria.where("filename").is(filename));
+//        FileEntity entity = mongoTemplate.findOne(query, FileEntity.class);
+        filename = FileUtil.getPrefix(filename);
+        GetObjectArgs args = GetObjectArgs.builder().bucket(bucketname).object(filename).build();
+        try (GetObjectResponse object = minioClient.getObject(args)) {
+            IoUtil.copy(object, response.getOutputStream());
+        }
     }
+
     @PostMapping("/uploadImage")
     @SaCheckLogin
     public SaResult uploadImage(
@@ -94,21 +91,34 @@ public class NoteController implements Serializable {
                 .setData(filename)
                 .setCode(200);
     }
+
     @GetMapping("/getNote")
     public SaResult getNote(String id) {
         Query q = new Query(Criteria.where("id")
                 .is(id));
-        NoteEnity one = mongoTemplate.findOne(q, NoteEnity.class);
-        if (one == null) return SaResult.error("无此Note");
-        else {
-            if (one.getType().equals("public")) return SaResult.data(one).setMsg("获取成功");
+        Query qq = new Query(Criteria.where("noteid")
+                .is(id));
+        NoteEnity note = mongoTemplate.findOne(q, NoteEnity.class);
+        NoteCardEnity card = mongoTemplate.findOne(qq, NoteCardEnity.class);
+        Update update = new Update();
+        if (card == null) return SaResult.error("无此Card");
+        update.set("view", card.getView() + 1);
+        if (note == null) return SaResult.error("无此Note");
+        else{
+            if (note.getType().equals("public")) {
+                mongoTemplate.updateFirst(qq,update,NoteCardEnity.class);
+                return SaResult.data(note).setMsg("获取成功");
+            }
             else if (!StpUtil.isLogin()) return SaResult.error("未登录，无法获取笔记");
 
             else {
                 String username = userService.getUserById(StpUtil.getLoginIdAsString()).getUsername();
-                if (!Objects.equals(username, one.getCreater())) {
+                if (!Objects.equals(username, note.getCreater())) {
                     return SaResult.error("无法访问其他人的笔记");
-                } else return SaResult.data(one).setMsg("获取成功");
+                } else {
+                    mongoTemplate.updateFirst(qq,update,NoteCardEnity.class);
+                    return SaResult.data(note).setMsg("获取成功");
+                }
             }
         }
 
@@ -125,7 +135,6 @@ public class NoteController implements Serializable {
         ArrayList<NoteCardEnity> cardByUsername = noteService.getCardByUsername(user.getUsername());
         return new SaResult().setCode(200).setData(cardByUsername);
     }
-
 
 
     @GetMapping("/delNote")

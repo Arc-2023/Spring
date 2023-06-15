@@ -130,4 +130,9 @@ public class NoteServiceImpl implements NoteService {
     public String getIntroByContent(String content) {
         return content == null ? "null" : content.substring(0, content.length() < 100 ? content.length() : 50);
     }
+
+    public Boolean increaseViewCount(){
+        return true;
+    }
+
 }

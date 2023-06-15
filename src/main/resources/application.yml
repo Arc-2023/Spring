@@ -28,8 +28,8 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 1000MB
-      max-request-size: 1000MB
+      max-file-size: 100MB
+      max-request-size: 100MB
   jackson:
     time-zone: GMT+8
 #  web:
@@ -41,6 +41,9 @@ server:
     encoding:
       charset: UTF-8
   address: 0.0.0.0
+  tomcat:
+    threads:
+      max: 999
 minio:
   endpoint: https://minio.220608.xyz/
   port: 443
