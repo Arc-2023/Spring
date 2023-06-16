@@ -1,5 +1,6 @@
 package com.vueespring.service.serviceImpl;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.vueespring.Scheduler.FWPushingJob;
 import com.vueespring.entity.ThingEnity;
 import com.vueespring.service.QuartzService;
@@ -30,8 +31,8 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
     @Override
-    public Boolean startThings(List<ThingEnity> list) throws Exception{
-        list.parallelStream().forEach(thing->{
+    public Boolean startThings(List<ThingEnity> list) {
+        list.forEach(thing->{
             try {
                 thingService.startitem(thing,scheduler);
             } catch (SchedulerException e) {
@@ -41,7 +42,7 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
     @Override
-    public Boolean pausethings(List<ThingEnity> list) throws Exception{
+    public Boolean pausethings(List<ThingEnity> list) {
         list.forEach(thing->{
             thingService.pausething(thing, scheduler);
         });

@@ -22,4 +22,8 @@ public interface ThingService {
     ThingEnity getThingByVoe(Itemtity itemtity, String userid, UserEntity userinfo);
 
     SimpleScheduleBuilder getInterval(Integer type);
+
+    Boolean checkToken(String token);
+
+    Boolean checkDupName(Itemtity itemtity);
 }

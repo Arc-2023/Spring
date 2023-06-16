@@ -12,6 +12,7 @@ import com.vueespring.service.serviceImpl.QuartzServiceImpl;
 import com.vueespring.entity.WebEntity.Item.Itemtity;
 import com.vueespring.entity.WebEntity.UserEntity;
 import com.vueespring.service.ThingsService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -26,6 +27,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
+@Slf4j
 public class ThingsController {
     @Autowired
     public ThingsService thingsService;
@@ -44,17 +46,11 @@ public class ThingsController {
     @SaCheckLogin
     public SaResult addThing(@RequestBody Itemtity itemtity) {
 
-        Query query = new Query(Criteria
-                .where("name")
-                .is(itemtity.getName()));
-        if (mongoTemplate.exists(query, Itemtity.class)) {
-            return SaResult.error("名称已经存在");
-        }
-        String loginId = (String) StpUtil.getLoginIdAsString();
+        String loginId = StpUtil.getLoginIdAsString();
         UserEntity user = userService.getUserById(loginId);
+        if(thingService.checkDupName(itemtity)) return SaResult.error("命名重复");
         assert user != null;
-        if (user.getAlertToken() == null)
-            return SaResult.error("AlertToken空");
+        if (user.getAlertToken() == null) return SaResult.error("AlertToken空");
         ThingEnity thing = thingService.getThingByVoe(itemtity, user.getId(), user);
         mongoTemplate.insert(thing);
         return SaResult.ok("插入Thing成功");
@@ -62,13 +58,11 @@ public class ThingsController {
 
     @GetMapping("/refreshThings")
     @SaCheckLogin
-    public SaResult refreshThings(@RequestParam("username") String username) throws Exception {
-
-
-        UserEntity user = userService.getUserByUsername(username);
-        Query query = new Query(Criteria.where("creater").is(username));
+    public SaResult refreshThings() throws Exception {
+        UserEntity user = userService.getUserById(StpUtil.getLoginIdAsString());
+        Query query = new Query(Criteria.where("creater").is(user.getUsername()));
         List<ThingEnity> thingEnities = mongoTemplate.find(query, ThingEnity.class);
-
+        if(thingEnities.isEmpty()) return SaResult.error("暂无事务记录");
         quartzservice.startThings(thingEnities
                 .parallelStream()
                 .filter(item -> thingService.checkAndSetStatus(item).equals("Running"))
@@ -87,6 +81,7 @@ public class ThingsController {
         if (thing == null) {
             return SaResult.error("Don't Exist");
         } else {
+            if(thingService.checkDupName(item)) return SaResult.error("命名重复");
             List<ThingEnity> listpre = new ArrayList<ThingEnity>();
             listpre.add(thing);
             quartzservice.delthings(listpre);
@@ -129,9 +124,11 @@ public class ThingsController {
         UserEntity user = userService.getUserById(loginId);
         Query query = new Query(Criteria.where("id").is(id));
         ThingEnity thing = mongoTemplate.findOne(query, ThingEnity.class);
-
-        if (thing == null || user.getUsername() == thing.getCreater()) {
-            return SaResult.error("Don't Exist");
+        if (thing == null || user == null) return SaResult.error("无匹配信息");
+        if (!user.getUsername().equals(thing.getCreater())) {
+            log.info(user.getUsername());
+            log.info(thing.getCreater());
+            return SaResult.error("鉴权失败");
         } else {
             LocalDateTime now = LocalDateTime.now();
             if (thing.getStatus() == "Running") {
@@ -161,10 +158,9 @@ public class ThingsController {
         UserEntity user = userService.getUserById(loginId);
         Query query = new Query(Criteria.where("id").is(id));
         ThingEnity thing = mongoTemplate.findOne(query, ThingEnity.class);
-        if (thing == null){
+        if (thing == null) {
             return SaResult.error("无此事务");
-        }
-        else if(Objects.equals(user.getUsername(), thing.getCreater())) {
+        } else if (Objects.equals(user.getUsername(), thing.getCreater())) {
             List<ThingEnity> things = new ArrayList<>();
             things.add(thing);
             thing.setStatus("Pause");
@@ -173,8 +169,7 @@ public class ThingsController {
                 mongoTemplate.updateFirst(query, updateService.updateThingEnity(item), ThingEnity.class);
             });
             return SaResult.ok("Pause");
-        }
-        else return SaResult.error("无权限");
+        } else return SaResult.error("无权限");
     }
 
     @GetMapping("/initStart")
@@ -188,7 +183,7 @@ public class ThingsController {
         quartzservice.initstart();
         quartzservice.startThings(things.stream()
                 .filter(item -> thingService.checkAndSetStatus(item)
-                .equals("Running"))
+                        .equals("Running"))
                 .collect(Collectors.toList()));
         return SaResult.ok("init successfully");
     }

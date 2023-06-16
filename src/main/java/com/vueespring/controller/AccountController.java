@@ -95,20 +95,26 @@ public class AccountController {
             HttpServletRequest request) {
         String loginId = StpUtil.getLoginIdAsString();
         UserEntity user = userService.getUserById(loginId);
-        Query query = new Query(Criteria.where("id")
-                .is(user.getId()));
+        if(!thingService.checkToken(token)) return SaResult.error("token错误");
+
         Update update = new Update();
         update.set("alertToken", token);
+
+        Query query = new Query(Criteria.where("id")
+                .is(user.getId()));
+
         Query query1 = new Query(Criteria.where("userid")
                 .is(user.getId()));
 
         user.setAlertToken(token);
-
         mongoTemplate.updateFirst(query, update, UserEntity.class);
-        mongoTemplate.updateFirst(query1, update, ThingEnity.class);
         List<ThingEnity> list = mongoTemplate.find(query1, ThingEnity.class);
+        if(list.isEmpty()) return  SaResult.ok("已修改token，请添加事务");
+        mongoTemplate.updateMulti(query1, update, ThingEnity.class);
         try {
-            quartzService.startThings(list.stream().filter(item -> thingService.checkAndSetStatus(item).equals("Running")).collect(Collectors.toList()));
+            quartzService.startThings(list.stream().filter(
+                    item -> thingService.checkAndSetStatus(item).equals("Running"))
+                            .collect(Collectors.toList()));
         } catch (Exception e) {
             return SaResult.error("token已修改,Things未重新启动，你可以刷新或者重新添加事务");
         }

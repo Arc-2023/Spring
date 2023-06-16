@@ -17,6 +17,15 @@ public class Itemtity {
     private String id;
     private String userid;
     private String name;
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+    private LocalDateTime startTime;
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+    private LocalDateTime endTime;
+    private String creater;
+    private String tag;
+    private Integer type;
+    private String message;
+    private String alertToken;
 
     public String getId() {
         return id;
@@ -98,13 +107,5 @@ public class Itemtity {
         this.alertToken = alertToken;
     }
 
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
-    private LocalDateTime startTime;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
-    private LocalDateTime endTime;
-    private String creater;
-    private String tag;
-    private Integer type;
-    private String message;
-    private String alertToken;
+
 }

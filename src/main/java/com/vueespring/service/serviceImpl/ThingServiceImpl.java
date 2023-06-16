@@ -1,5 +1,7 @@
 package com.vueespring.service.serviceImpl;
 
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpUtil;
 import com.vueespring.Scheduler.FWPushingJob;
 import com.vueespring.entity.ThingEnity;
 import com.vueespring.entity.WebEntity.Item.Itemtity;
@@ -8,6 +10,9 @@ import com.vueespring.service.ThingService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
@@ -19,6 +24,9 @@ import java.time.ZoneId;
 @Service
 @Slf4j
 public class ThingServiceImpl implements ThingService {
+    @Autowired
+    MongoTemplate mongoTemplate;
+
     @Override
     public void creatitem(ThingEnity thing, Scheduler scheduler) throws SchedulerException {
         Integer type = thing.getType();
@@ -105,11 +113,28 @@ public class ThingServiceImpl implements ThingService {
         thingEnity.setStatus("Pause");
         return thingEnity;
     }
+
     @Override
-    public SimpleScheduleBuilder getInterval(Integer type){
+    public SimpleScheduleBuilder getInterval(Integer type) {
         SimpleScheduleBuilder simpleScheduleBuilder = SimpleScheduleBuilder.simpleSchedule()
                 .repeatForever();
         simpleScheduleBuilder.withIntervalInHours(type);
         return simpleScheduleBuilder;
+    }
+
+    @Override
+    public Boolean checkToken(String token) {
+        HttpRequest get = HttpUtil.createGet("https://fwalert.com/" + token);
+        return get.execute(true).isOk();
+    }
+
+    @Override
+    public Boolean checkDupName(Itemtity itemtity) {
+        ThingEnity entity = mongoTemplate.findOne(new Query(Criteria
+                .where("name")
+                .is(itemtity.getName())), ThingEnity.class);
+        if(entity == null) return false;
+        if (itemtity.getId() != null) return entity.getName().equals(itemtity.getName()) && !entity.getId().equals(itemtity.getId());
+        else return entity.getName().equals(itemtity.getName());
     }
 }
