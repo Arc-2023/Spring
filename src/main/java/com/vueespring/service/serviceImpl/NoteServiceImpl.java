@@ -21,6 +21,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -51,6 +52,8 @@ public class NoteServiceImpl implements NoteService {
     MinioClient minioClient;
     @Autowired
     RedisOperator redisOperator;
+    @Autowired
+    RedisTemplate<String,String> redisTemplate;
 
     @Override
     public String saveImg(MultipartFile file) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
@@ -80,8 +83,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public List<NoteEnity> getNotes(String creater) {
-        List<NoteEnity> cards = mongoTemplate.find(new Query(Criteria.where("creater").is(creater)), NoteEnity.class);
-        return cards;
+        return mongoTemplate.find(new Query(Criteria.where("creater").is(creater)), NoteEnity.class);
     }
 
     @Override

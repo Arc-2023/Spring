@@ -26,6 +26,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,7 +57,7 @@ public class NoteController implements Serializable {
     @Autowired
     MinioClient minioClient;
     @Autowired
-    RedisOperator redisOperator;
+    RedisTemplate<String,String> redisTemplate;
     @Autowired
     CurrencyLimiter limiter;
 
@@ -214,7 +215,6 @@ public class NoteController implements Serializable {
             note.setContent("null");
             note.setType("private");
             note.setTag("Default");
-
             mongoTemplate.insert(note);
             note = mongoTemplate.findOne(query, NoteEnity.class);
             NoteCardEnity entity = noteService.setCardByNoteDefault(note);

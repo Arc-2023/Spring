@@ -45,7 +45,7 @@ public class IOServiceImpl implements IOService {
         String id = StpUtil.getLoginIdAsString();
         UserEntity userById = userService.getUserById(id);
 
-        String fileuserid = mongoTemplate.findOne(query, FileEntity.class).getUploaderid();
+        String fileuserid = Objects.requireNonNull(mongoTemplate.findOne(query, FileEntity.class)).getUploaderid();
         if (!Objects.equals(userById.getId(), fileuserid)) return SaResult.error("无删除权限");
         RemoveObjectArgs args = RemoveObjectArgs.builder()
                 .object(filename)

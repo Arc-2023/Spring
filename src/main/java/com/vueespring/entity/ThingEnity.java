@@ -24,7 +24,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class ThingEnity implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
     public String getId() {
         return id;
     }

@@ -26,7 +26,6 @@ public class QuartzServiceImpl implements QuartzService {
 
     @Override
     public Boolean initstart() throws SchedulerException {
-        scheduler.clear();
         scheduler.start();
         return true;
     }
