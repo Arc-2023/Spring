@@ -3,27 +3,27 @@ spring:
     name: vuee-spring
   data:
     mongodb:
-      host: 123.207.48.124
-      database: test
+      host: 8.134.18.19
+      database: admin
+      port: 32000
       username: arc
       password: 123456QWe
-      port: 32000
-#    redis:
-#      database: 1
-#      host: 123.207.48.124
-#      port: 6379
-#      password: 123456qwe
-#      timeout: 10s
-#      lettuce:
-#        pool:
-#          # 连接池最大连接数
-#          max-active: 200
-#          # 连接池最大阻塞等待时间（使用负值表示没有限制）
-#          max-wait: -1ms
-#          # 连接池中的最大空闲连接
-#          max-idle: 10
-#          # 连接池中的最小空闲连接
-#          min-idle: 0
+    redis:
+      database: 1
+      host: 8.134.18.19
+      port: 30379
+      password: 123456qwe
+      timeout: 10s
+      lettuce:
+        pool:
+          # 连接池最大连接数
+          max-active: 200
+          # 连接池最大阻塞等待时间（使用负值表示没有限制）
+          max-wait: -1ms
+          # 连接池中的最大空闲连接
+          max-idle: 10
+          # 连接池中的最小空闲连接
+          min-idle: 0
 #  mvc:
 #    static-path-pattern: /**
   servlet:
@@ -48,7 +48,7 @@ server:
 minio:
   endpoint: https://minio.220608.xyz/
   port: 443
-  accessKey: kxKjFVKcCBVXwm2hCAEn
-  secretKey: 5yUXA2bnRMIdCKmoDpPvW5ZugA6mCdgTO0diBw64
+  accessKey: eHEmle18oe0delpwezqc
+  secretKey: xEJNnXWU7fksVHStWrli8kGyuQCRCQ3rBVNjSHzb
   bucketName: test
   validate-ssl: false
