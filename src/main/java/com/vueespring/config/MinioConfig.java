@@ -23,11 +23,10 @@ public class MinioConfig {
     private Boolean validatessl;
     @Bean
     public MinioClient minioClient(){
-        MinioClient minioClient = MinioClient.builder()
+        return MinioClient.builder()
                 .endpoint(endpoint)
                 .credentials(accessKey,secretKey)
                 .build();
-        return minioClient;
     }
 
 }
