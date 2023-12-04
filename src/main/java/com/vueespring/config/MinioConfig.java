@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Configuration;
 public class MinioConfig {
     @Value("${minio.endpoint}")
     private String endpoint;
-    @Value("${minio.port}")
-    private Integer port;
+//    @Value("${minio.port}")
+    private Integer port = 443;
     @Value("${minio.accessKey}")
     private String accessKey;
     @Value("${minio.secretKey}")
