@@ -3,14 +3,14 @@ spring:
     name: vuee-spring
   data:
     mongodb:
-      host: 8.134.18.19
+      host: mongo.220608.xyz
       database: admin
       port: 32000
       username: arc
       password: 123456QWe
     redis:
       database: 1
-      host: 8.134.18.19
+      host: mongo.220608.xyz
       port: 30379
       password: 123456qwe
       timeout: 10s
