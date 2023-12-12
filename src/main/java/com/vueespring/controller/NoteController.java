@@ -12,7 +12,7 @@ import com.vueespring.service.NoteService;
 import com.vueespring.service.IOService;
 import com.vueespring.service.UserService;
 import com.vueespring.utils.CurrencyLimiter;
-import com.vueespring.utils.RedisOperator;
+//import com.vueespring.utils.RedisOperator;
 import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
 import io.minio.MinioClient;
@@ -26,7 +26,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,8 +55,6 @@ public class NoteController implements Serializable {
     MongoTemplate mongoTemplate;
     @Autowired
     MinioClient minioClient;
-    @Autowired
-    RedisTemplate<String,String> redisTemplate;
     @Autowired
     CurrencyLimiter limiter;
 

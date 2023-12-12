@@ -8,7 +8,7 @@ import com.vueespring.entity.NoteEnity;
 import com.vueespring.entity.WebEntity.NoteCardEnity;
 import com.vueespring.entity.WebEntity.UserEntity;
 import com.vueespring.service.NoteService;
-import com.vueespring.utils.RedisOperator;
+//import com.vueespring.utils.RedisOperator;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.errors.*;
@@ -20,7 +20,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -50,10 +49,8 @@ public class NoteServiceImpl implements NoteService {
     String bucketName;
     @Autowired
     MinioClient minioClient;
-    @Autowired
-    RedisOperator redisOperator;
-    @Autowired
-    RedisTemplate<String,String> redisTemplate;
+//    @Autowired
+//    RedisOperator redisOperator;
 
     @Override
     public String saveImg(MultipartFile file) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {

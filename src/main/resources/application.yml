@@ -10,7 +10,7 @@ spring:
       password: 123456QWe
     redis:
       database: 1
-      host: mongo.220608.xyz
+      host: redis.220608.xyz
       port: 30379
       password: 123456qwe
       timeout: 10s
