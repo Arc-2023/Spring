@@ -6,12 +6,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+//import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
 import java.util.TimeZone;
 
 @SpringBootApplication
-@EnableRedisRepositories
+//@EnableRedisRepositories
 public class VueeSpringApplication {
     @Autowired
     MongoTemplate mongoTemplate;
