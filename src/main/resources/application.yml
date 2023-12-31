@@ -46,7 +46,7 @@ server:
     threads:
       max: 999
 minio:
-  endpoint: https://minio.220608.xyz/
+  endpoint: https://minio.arc2023.top/
   port: 443
   accessKey: eHEmle18oe0delpwezqc
   secretKey: xEJNnXWU7fksVHStWrli8kGyuQCRCQ3rBVNjSHzb

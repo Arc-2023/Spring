@@ -5,21 +5,15 @@
 # They are provided by a third-party and are governed by
 # separate terms of service, privacy policy, and support
 # documentation.
-
 name: Java CI with Maven
-
 on:
   push:
     branches: [ "k8s" ]
   pull_request:
     branches: [ "k8s" ]
-
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Set up JDK 17
@@ -45,4 +39,10 @@ jobs:
       with:
         context: .
         push: true
-        tags: ironbox00/blog-backend:1.0.0
+        tags: ironbox00/blog-backend:1.0.2f2
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ironbox00/blog-backend:latest
