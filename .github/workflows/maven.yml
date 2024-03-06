@@ -39,7 +39,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: ironbox00/blog-backend:1.0.2f2
+        tags: ironbox00/blog-backend:1.0.2f3
     - name: Build and push
       uses: docker/build-push-action@v5
       with:
